@@ -12,5 +12,5 @@ interface NotesRepository {
 
     fun deleteNote(noteId: String): Flow<Boolean>
 
-    fun getNotes(): Flow<Resource<List<Note>>>
+    fun getNotes(userId: String): Flow<Resource<List<Note>>>
 }

@@ -17,12 +17,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.joao.awesomenotesapp.R
-import com.joao.awesomenotesapp.viewmodel.NotesViewModel
+import com.joao.awesomenotesapp.viewmodel.AddEditNotesViewModel
+
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun AddEditNotesScreen(navController: NavController, noteId: String?){
-    val viewModel: NotesViewModel = hiltViewModel()
+    val viewModel: AddEditNotesViewModel = hiltViewModel()
     val scaffoldState = rememberScaffoldState()
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
@@ -33,10 +34,10 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
             when(event) {
-                is NotesViewModel.UiEvent.NoteSaved -> {
+                is AddEditNotesViewModel.UiEvent.NoteSaved -> {
                     navController.navigateUp()
                 }
-                is NotesViewModel.UiEvent.Failed -> {
+                is AddEditNotesViewModel.UiEvent.Failed -> {
                     scaffoldState.snackbarHostState.showSnackbar(
                         message = context.getString(R.string.something_went_wrong),
                         duration = SnackbarDuration.Short

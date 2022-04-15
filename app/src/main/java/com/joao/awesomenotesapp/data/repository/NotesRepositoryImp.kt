@@ -1,10 +1,13 @@
 package com.joao.awesomenotesapp.data.repository
 
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.database.DatabaseReference
 import com.joao.awesomenotesapp.data.local.NoteDao
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
+import com.joao.awesomenotesapp.util.CustomExceptions
 import com.joao.awesomenotesapp.util.Resource
-import com.google.firebase.database.DatabaseReference
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -20,12 +23,11 @@ class NotesRepositoryImp(
         timestamp: Long
     ): Flow<Boolean> {
         return callbackFlow {
-            val note = Note(title, content, timestamp)
             val ref = firebaseDatabase.database.getReference("users")
-            val ref2 = firebaseDatabase.database.reference
-            val key: String? = ref.push().key
+            val key = ref.child(userId).child("notes").push().key
             if (key != null) {
-                ref.child(userId).setValue(note)
+                val note = Note(key, title, content, timestamp)
+                ref.child(userId).child("notes").child(key).setValue(note)
                     .addOnSuccessListener {
                         trySend(true)
                     }
@@ -33,6 +35,7 @@ class NotesRepositoryImp(
                         trySend(false)
                     }
             }
+
             awaitClose()
         }
     }
@@ -45,13 +48,35 @@ class NotesRepositoryImp(
         TODO("Not yet implemented")
     }
 
-    override fun getNotes(): Flow<Resource<List<Note>>> {
+    override fun getNotes(userId: String): Flow<Resource<List<Note>>> {
         return callbackFlow {
             trySend(Resource.Loading())
 
-            val notes = dao.getNotes().map { it.toNote() }
-            trySend(Resource.Loading(notes))
+            val ref = firebaseDatabase.database.getReference("users")
+            ref.child(userId).child("notes").get()
+                .addOnCompleteListener { it ->
+                    if (it.isSuccessful) {
+                        val notes = mutableListOf<Note>()
 
+                        for (dataValues in it.result.children) {
+                            val restaurantModel: Note? = dataValues.getValue(Note::class.java)
+                            notes.add(restaurantModel!!)
+                        }
+
+                        trySend(Resource.Success(notes))
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    if(exception is FirebaseException){
+                        trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
+                    }else{
+                        trySend(Resource.Error(
+                            exception = (exception as FirebaseAuthException).localizedMessage?.let { it ->
+                                CustomExceptions.ConflictException(it)
+                            }))
+                    }
+
+                }
 
             awaitClose()
         }

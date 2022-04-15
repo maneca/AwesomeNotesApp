@@ -124,9 +124,10 @@ class LoginRegisterViewModel @Inject constructor(
         }
         return true
     }
+
+    data class UserState(
+        val user: FirebaseUser? = null,
+        val loading: Boolean = false
+    )
 }
 
-data class UserState(
-    val user: FirebaseUser? = null,
-    val loading: Boolean = false
-)

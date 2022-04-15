@@ -6,13 +6,14 @@ import com.joao.awesomenotesapp.domain.model.Note
 
 @Entity(tableName = "notes")
 data class NoteEntity(
-    @PrimaryKey(autoGenerate = true) val id : Int,
+    @PrimaryKey val id : String,
     val title: String,
     val message: String,
     val timestamp: Long
 ) {
     fun toNote(): Note {
         return Note(
+            id,
             title,
             message,
             timestamp,
