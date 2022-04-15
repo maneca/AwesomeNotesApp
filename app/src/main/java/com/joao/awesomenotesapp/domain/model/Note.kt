@@ -1,6 +1,7 @@
 package com.joao.awesomenotesapp.domain.model
 
 import com.google.firebase.database.IgnoreExtraProperties
+import com.joao.awesomenotesapp.data.local.entity.NoteEntity
 
 @IgnoreExtraProperties
 data class Note(
@@ -8,4 +9,13 @@ data class Note(
     val title: String = "",
     val content: String = "",
     val timestamp: Long = 0
-)
+){
+    fun toNoteEntity(): NoteEntity{
+        return NoteEntity(
+            id,
+            title,
+            content,
+            timestamp
+        )
+    }
+}

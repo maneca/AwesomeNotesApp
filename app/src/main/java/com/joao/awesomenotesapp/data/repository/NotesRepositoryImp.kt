@@ -13,6 +13,8 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
+import java.lang.Exception
 
 class NotesRepositoryImp(
     private val firebaseDatabase: DatabaseReference,
@@ -47,52 +49,53 @@ class NotesRepositoryImp(
         TODO("Not yet implemented")
     }
 
-    override fun deleteNote(userId: String, noteId: String): Flow<Boolean> {
-        return callbackFlow {
+    override fun deleteNote(userId: String, noteId: String): Flow<Boolean> = flow {
             val ref = firebaseDatabase.database.getReference("users")
-            ref.child(userId).child("notes").child(noteId).removeValue()
-                .addOnSuccessListener {
-                    trySend(true)
-                }
-                .addOnFailureListener {
-                    trySend(false)
-                }
 
-            awaitClose()
-        }
+            try {
+                ref.child(userId).child("notes").child(noteId).removeValue().await()
+                emit(true)
+            }
+            catch (_: Exception) {
+                emit(false)
+            }
+            catch (_: FirebaseException) {
+                emit(false)
+            }
     }
 
-    override fun getNotes(userId: String): Flow<Resource<List<Note>>> {
-        return callbackFlow {
-            trySend(Resource.Loading())
+    override fun getNotes(userId: String): Flow<Resource<List<Note>>> = flow {
 
+        emit(Resource.Loading())
+
+        val notes = dao.getNotes().map { it.toNote() }
+        emit(Resource.Loading(notes))
+
+        try {
             val ref = firebaseDatabase.database.getReference("users")
-            ref.child(userId).child("notes").get()
-                .addOnCompleteListener { it ->
-                    if (it.isSuccessful) {
-                        val notes = mutableListOf<Note>()
+            val result = ref.child(userId).child("notes").get().await()
 
-                        for (dataValues in it.result.children) {
-                            val restaurantModel: Note? = dataValues.getValue(Note::class.java)
-                            notes.add(restaurantModel!!)
-                        }
+            dao.deleteNotes()
 
-                        trySend(Resource.Success(notes))
-                    }
-                }
-                .addOnFailureListener { exception ->
-                    if (exception is FirebaseException) {
-                        trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
-                    } else {
-                        trySend(
-                            Resource.Error(
-                                exception = (exception as FirebaseAuthException).localizedMessage?.let { it ->
-                                    CustomExceptions.ConflictException(it)
-                                })
-                        )
-                    }
-                }
-            awaitClose()
+            val remoteNotes = mutableListOf<Note>()
+            for (dataValues in result.children) {
+                val note: Note? = dataValues.getValue(Note::class.java)
+                remoteNotes.add(note!!)
+            }
+
+            dao.insertNotes(remoteNotes.map { it.toNoteEntity() })
+            emit(Resource.Success(remoteNotes))
+        }
+        catch (exception : FirebaseAuthException){
+            emit(
+                Resource.Error(
+                    exception = exception.localizedMessage?.let { it ->
+                        CustomExceptions.ConflictException(it)
+                    })
+            )
+        }
+        catch (exception: Exception) {
+            emit(Resource.Error(exception = CustomExceptions.UnknownException))
         }
     }
 

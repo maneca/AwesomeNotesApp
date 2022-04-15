@@ -5,60 +5,59 @@ import com.joao.awesomenotesapp.util.CustomExceptions
 import com.joao.awesomenotesapp.util.Resource
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.*
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
 
 class LoginRegisterRepositoryImp(
     private val firebaseAuth: FirebaseAuth
-): LoginRegisterRepository {
-    override fun loginUser(email: String, password: String): Flow<Resource<FirebaseUser?>> {
-        return callbackFlow {
-            trySend(Resource.Loading())
-            firebaseAuth
-                .signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener {
-                    if (it.isSuccessful){
-                        trySend(Resource.Success(firebaseAuth.currentUser))
-                    }
-                }
-                .addOnFailureListener { exception ->
-                    if(exception is FirebaseException){
-                        trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
-                    }else{
-                        trySend(Resource.Error(
-                            exception = (exception as FirebaseAuthException).localizedMessage?.let { it ->
-                                CustomExceptions.ConflictException(it)
-                            }))
-                    }
+) : LoginRegisterRepository {
+    override fun loginUser(email: String, password: String): Flow<Resource<FirebaseUser?>> = flow {
 
-                }
-            awaitClose()
+        emit(Resource.Loading())
+        try {
+            val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
+            emit(Resource.Success(result.user))
+        } catch (exception: FirebaseAuthException) {
+            emit(
+                Resource.Error(
+                    exception = exception.localizedMessage?.let { it ->
+                        CustomExceptions.ConflictException(it)
+                    })
+            )
+        } catch (exception: FirebaseAuthInvalidUserException) {
+            emit(
+                Resource.Error(
+                    exception = exception.localizedMessage?.let { it ->
+                        CustomExceptions.ConflictException(it)
+                    })
+            )
+        }catch (exception: FirebaseException) {
+            emit(Resource.Error(exception = CustomExceptions.ApiNotResponding))
         }
     }
 
-    override fun registerUser(email: String, password: String): Flow<Resource<FirebaseUser?>> {
-        return callbackFlow {
-            trySend(Resource.Loading())
-            firebaseAuth
-                .createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener {
-                    if (it.isSuccessful){
-                        trySend(Resource.Success(firebaseAuth.currentUser))
-                    }
-                }
-                .addOnFailureListener { exception ->
-                    if(exception is FirebaseException){
-                        trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
-                    }else{
-                        trySend(Resource.Error(
-                            exception = (exception as FirebaseAuthException).localizedMessage?.let { it ->
-                                CustomExceptions.ConflictException(it)
-                            }))
-                    }
-                }
-            awaitClose()
+    override fun registerUser(email: String, password: String): Flow<Resource<FirebaseUser?>> = flow {
+            emit(Resource.Loading())
+        try {
+            val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+            emit(Resource.Success(result.user))
+        }catch (exception: FirebaseAuthException) {
+            emit(
+                Resource.Error(
+                    exception = exception.localizedMessage?.let { it ->
+                        CustomExceptions.ConflictException(it)
+                    })
+            )
+        } catch (exception: FirebaseAuthInvalidUserException) {
+            emit(
+                Resource.Error(
+                    exception = exception.localizedMessage?.let { it ->
+                        CustomExceptions.ConflictException(it)
+                    })
+            )
+        }catch (exception: FirebaseException) {
+            emit(Resource.Error(exception = CustomExceptions.ApiNotResponding))
         }
     }
 }
