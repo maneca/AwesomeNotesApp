@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.joao.awesomenotesapp.R
+import com.joao.awesomenotesapp.util.UiEvent
 import com.joao.awesomenotesapp.viewmodel.AddEditNotesViewModel
 
 import kotlinx.coroutines.flow.collectLatest
@@ -35,10 +36,10 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
             when(event) {
-                is AddEditNotesViewModel.UiEvent.NoteSaved -> {
+                is UiEvent.NoteSaved -> {
                     navController.navigateUp()
                 }
-                is AddEditNotesViewModel.UiEvent.Failed -> {
+                is UiEvent.Failed -> {
                     scaffoldState.snackbarHostState.showSnackbar(
                         message = context.getString(R.string.something_went_wrong),
                         duration = SnackbarDuration.Short

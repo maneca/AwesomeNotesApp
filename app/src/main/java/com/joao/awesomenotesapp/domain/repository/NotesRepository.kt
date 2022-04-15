@@ -13,4 +13,6 @@ interface NotesRepository {
     fun deleteNote(userId: String, noteId: String): Flow<Boolean>
 
     fun getNotes(userId: String): Flow<Resource<List<Note>>>
+
+    fun logout(userId: String): Flow<Boolean>
 }

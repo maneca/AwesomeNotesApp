@@ -36,7 +36,7 @@ class NotesModule {
     fun provideNotesRepository(
         database: NoteDatabase
     ): NotesRepository {
-        return NotesRepositoryImp(Firebase.database.reference, database.noteDao)
+        return NotesRepositoryImp(Firebase.database.reference, FirebaseAuth.getInstance(), database.noteDao)
     }
 
     @Provides

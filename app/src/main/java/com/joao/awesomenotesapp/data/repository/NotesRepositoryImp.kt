@@ -1,6 +1,7 @@
 package com.joao.awesomenotesapp.data.repository
 
 import com.google.firebase.FirebaseException
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.database.DatabaseReference
 import com.joao.awesomenotesapp.data.local.NoteDao
@@ -11,9 +12,11 @@ import com.joao.awesomenotesapp.util.Resource
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 
 class NotesRepositoryImp(
     private val firebaseDatabase: DatabaseReference,
+    private val firebaseAuth: FirebaseAuth,
     private val dao: NoteDao
 ) : NotesRepository {
     override fun saveNote(
@@ -88,10 +91,13 @@ class NotesRepositoryImp(
                                 })
                         )
                     }
-
                 }
-
             awaitClose()
         }
+    }
+
+    override fun logout(userId: String): Flow<Boolean> = flow {
+        firebaseAuth.signOut()
+        emit(true)
     }
 }

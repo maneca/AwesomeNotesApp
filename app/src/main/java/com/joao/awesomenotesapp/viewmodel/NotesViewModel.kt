@@ -7,10 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
-import com.joao.awesomenotesapp.util.CustomExceptions
-import com.joao.awesomenotesapp.util.DispatcherProvider
-import com.joao.awesomenotesapp.util.Resource
-import com.joao.awesomenotesapp.util.UiText
+import com.joao.awesomenotesapp.util.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -30,7 +27,7 @@ class NotesViewModel @Inject constructor(
     private val validationFieldsChannel = Channel<UiText>()
     val errors = validationFieldsChannel.receiveAsFlow()
 
-    private val _eventFlow = MutableSharedFlow<UiNotesEvent>()
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
     private var getNotesJob: Job? = null
@@ -84,9 +81,25 @@ class NotesViewModel @Inject constructor(
                 .deleteNote(userId, noteId)
                 .onEach { result ->
                     if (result) {
-                        _eventFlow.emit(UiNotesEvent.NoteDeleted)
+                        _eventFlow.emit(UiEvent.NoteDeleted)
                     } else {
-                        _eventFlow.emit(UiNotesEvent.Failed)
+                        _eventFlow.emit(UiEvent.Failed)
+                    }
+                }
+                .flowOn(dispatcher.io())
+                .launchIn(this)
+        }
+    }
+
+    fun logoutUser(userId: String){
+        viewModelScope.launch {
+            repository
+                .logout(userId)
+                .onEach { result ->
+                    if (result) {
+                        _eventFlow.emit(UiEvent.UserLoggedOut)
+                    } else {
+                        _eventFlow.emit(UiEvent.Failed)
                     }
                 }
                 .flowOn(dispatcher.io())
@@ -98,10 +111,5 @@ class NotesViewModel @Inject constructor(
         val notes: List<Note> = emptyList(),
         val loading : Boolean = false
     )
-
-    sealed class UiNotesEvent {
-        object NoteDeleted : UiNotesEvent()
-        object Failed : UiNotesEvent()
-    }
 }
 

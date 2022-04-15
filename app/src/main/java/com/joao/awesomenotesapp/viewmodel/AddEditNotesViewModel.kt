@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.DispatcherProvider
+import com.joao.awesomenotesapp.util.UiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -34,8 +35,4 @@ class AddEditNotesViewModel @Inject constructor(
         }
     }
 
-    sealed class UiEvent {
-        object NoteSaved : UiEvent()
-        object Failed : UiEvent()
-    }
 }

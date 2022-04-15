@@ -4,6 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,6 +22,7 @@ import androidx.navigation.NavController
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.Screen
 import com.joao.awesomenotesapp.ui.components.NoteItem
+import com.joao.awesomenotesapp.util.UiEvent
 import com.joao.awesomenotesapp.viewmodel.NotesViewModel
 import kotlinx.coroutines.flow.collectLatest
 
@@ -42,16 +46,19 @@ fun NotesScreen(navController: NavController, userId: String?) {
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
             when(event) {
-                is NotesViewModel.UiNotesEvent.NoteDeleted -> {
+                is UiEvent.NoteDeleted -> {
                     scaffoldState.snackbarHostState.showSnackbar(
                         message = context.getString(R.string.note_deleted),
                     )
                 }
-                is NotesViewModel.UiNotesEvent.Failed -> {
+                is UiEvent.Failed -> {
                     scaffoldState.snackbarHostState.showSnackbar(
                         message = context.getString(R.string.something_went_wrong),
                         duration = SnackbarDuration.Short
                     )
+                }
+                is UiEvent.UserLoggedOut -> {
+                    navController.navigate(Screen.LoginScreen.route)
                 }
             }
         }
@@ -65,7 +72,18 @@ fun NotesScreen(navController: NavController, userId: String?) {
                         stringResource(id = R.string.app_name),
                         color = Color.White
                     )},
-                backgroundColor = Color.Blue
+                backgroundColor = Color.Blue,
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.logoutUser(userId!!)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Logout,
+                            contentDescription = "Save",
+                            tint = Color.White
+                        )
+                    }
+                }
             )
         },
         floatingActionButton = {
