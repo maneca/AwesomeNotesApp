@@ -5,11 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -19,7 +20,7 @@ import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.Screen
 import com.joao.awesomenotesapp.ui.components.NoteItem
 import com.joao.awesomenotesapp.viewmodel.NotesViewModel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 
 
 @Composable
@@ -27,7 +28,34 @@ fun NotesScreen(navController: NavController, userId: String?) {
     val viewModel: NotesViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState()
     val scaffoldState = rememberScaffoldState()
-    val scope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    LaunchedEffect(key1 = scaffoldState){
+        viewModel.errors.collect{
+            scaffoldState.snackbarHostState.showSnackbar(
+                message = it.asString(context),
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
+    LaunchedEffect(key1 = true) {
+        viewModel.eventFlow.collectLatest { event ->
+            when(event) {
+                is NotesViewModel.UiNotesEvent.NoteDeleted -> {
+                    scaffoldState.snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.note_deleted),
+                    )
+                }
+                is NotesViewModel.UiNotesEvent.Failed -> {
+                    scaffoldState.snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.something_went_wrong),
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        }
+    }
 
     Scaffold(modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -77,10 +105,8 @@ fun NotesScreen(navController: NavController, userId: String?) {
 
                             },
                         onDeleteClick = {
-                            scope.launch {
-                                scaffoldState.snackbarHostState.showSnackbar(
-                                    message = "Note deleted",
-                                )
+                            if(userId != null){
+                                viewModel.deleteNote(userId, state.value.notes[note].id)
                             }
                         }
                     )

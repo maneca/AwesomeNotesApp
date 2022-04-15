@@ -4,13 +4,16 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.CustomExceptions
 import com.joao.awesomenotesapp.util.DispatcherProvider
 import com.joao.awesomenotesapp.util.Resource
+import com.joao.awesomenotesapp.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,6 +26,12 @@ class NotesViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(NotesState())
     val state = _state.asStateFlow()
+
+    private val validationFieldsChannel = Channel<UiText>()
+    val errors = validationFieldsChannel.receiveAsFlow()
+
+    private val _eventFlow = MutableSharedFlow<UiNotesEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     private var getNotesJob: Job? = null
 
@@ -45,7 +54,16 @@ class NotesViewModel @Inject constructor(
                             )
                         }
                         is Resource.Error -> {
+                            _state.value = state.value.copy(
+                                notes = listOf(),
+                                loading = false
+                            )
 
+                            if (result.exception is CustomExceptions.ConflictException){
+                                validationFieldsChannel.send(UiText.DynamicString(result.exception.message!!))
+                            }else{
+                                validationFieldsChannel.send(UiText.StringResource(R.string.something_went_wrong))
+                            }
                         }
                         is Resource.Loading -> {
                             _state.value = state.value.copy(
@@ -60,10 +78,30 @@ class NotesViewModel @Inject constructor(
         }
     }
 
+    fun deleteNote(userId: String, noteId: String){
+        viewModelScope.launch {
+            repository
+                .deleteNote(userId, noteId)
+                .onEach { result ->
+                    if (result) {
+                        _eventFlow.emit(UiNotesEvent.NoteDeleted)
+                    } else {
+                        _eventFlow.emit(UiNotesEvent.Failed)
+                    }
+                }
+                .flowOn(dispatcher.io())
+                .launchIn(this)
+        }
+    }
+
     data class NotesState(
         val notes: List<Note> = emptyList(),
         val loading : Boolean = false
     )
 
+    sealed class UiNotesEvent {
+        object NoteDeleted : UiNotesEvent()
+        object Failed : UiNotesEvent()
+    }
 }
 

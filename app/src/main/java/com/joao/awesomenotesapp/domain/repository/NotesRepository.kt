@@ -10,7 +10,7 @@ interface NotesRepository {
 
     fun editNote(title: String, content: String): Flow<Boolean>
 
-    fun deleteNote(noteId: String): Flow<Boolean>
+    fun deleteNote(userId: String, noteId: String): Flow<Boolean>
 
     fun getNotes(userId: String): Flow<Resource<List<Note>>>
 }

@@ -12,6 +12,7 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -51,7 +52,7 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Edit note", color = Color.White) },
+                title = { Text(stringResource(id = R.string.edit_note), color = Color.White) },
                 backgroundColor = Color.Blue,
                 navigationIcon = if (navController.previousBackStackEntry != null) {
                     {

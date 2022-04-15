@@ -44,8 +44,19 @@ class NotesRepositoryImp(
         TODO("Not yet implemented")
     }
 
-    override fun deleteNote(noteId: String): Flow<Boolean> {
-        TODO("Not yet implemented")
+    override fun deleteNote(userId: String, noteId: String): Flow<Boolean> {
+        return callbackFlow {
+            val ref = firebaseDatabase.database.getReference("users")
+            ref.child(userId).child("notes").child(noteId).removeValue()
+                .addOnSuccessListener {
+                    trySend(true)
+                }
+                .addOnFailureListener {
+                    trySend(false)
+                }
+
+            awaitClose()
+        }
     }
 
     override fun getNotes(userId: String): Flow<Resource<List<Note>>> {
@@ -67,13 +78,15 @@ class NotesRepositoryImp(
                     }
                 }
                 .addOnFailureListener { exception ->
-                    if(exception is FirebaseException){
+                    if (exception is FirebaseException) {
                         trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
-                    }else{
-                        trySend(Resource.Error(
-                            exception = (exception as FirebaseAuthException).localizedMessage?.let { it ->
-                                CustomExceptions.ConflictException(it)
-                            }))
+                    } else {
+                        trySend(
+                            Resource.Error(
+                                exception = (exception as FirebaseAuthException).localizedMessage?.let { it ->
+                                    CustomExceptions.ConflictException(it)
+                                })
+                        )
                     }
 
                 }

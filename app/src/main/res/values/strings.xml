@@ -11,4 +11,7 @@
     <string name="email_invalid">Email is invalid</string>
     <string name="password_mandatory">Password is mandatory</string>
     <string name="password_short">Password must have at least 6 characters</string>
+
+    <string name="note_deleted">Note deleted</string>
+    <string name="edit_note">Edit note</string>
 </resources>

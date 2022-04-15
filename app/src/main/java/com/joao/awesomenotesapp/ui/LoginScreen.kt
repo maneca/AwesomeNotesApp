@@ -27,6 +27,7 @@ fun LoginScreen(navController: NavController) {
     val viewModel: LoginRegisterViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState()
     val scaffoldState = rememberScaffoldState()
+
     val context = LocalContext.current
     LaunchedEffect(key1 = scaffoldState){
         viewModel.errors.collect{
