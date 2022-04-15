@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "758828618587",
+    "project_id": "awesomenotes-2c445",
+    "storage_bucket": "awesomenotes-2c445.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:758828618587:android:0c1de0dc7d10ff19e5007e",
+        "android_client_info": {
+          "package_name": "com.joao.awesomenotesapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "758828618587-9eleogqc7qbdn2v1gmmjim0q50s2u8bt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.joao.awesomenotesapp",
+            "certificate_hash": "05352c49e1355f0d21027cb42befb0bcfac98367"
+          }
+        },
+        {
+          "client_id": "758828618587-1ga1j9ah19fiiiur7vu77p9a251sp8be.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD16Ao2SvsBj08N1YYYWUdY0hYpfKRufYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "758828618587-1ga1j9ah19fiiiur7vu77p9a251sp8be.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
