@@ -18,11 +18,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.joao.awesomenotesapp.R
+import com.joao.awesomenotesapp.util.ConnectionState
 import com.joao.awesomenotesapp.util.UiEvent
+import com.joao.awesomenotesapp.util.connectivityState
 import com.joao.awesomenotesapp.viewmodel.AddEditNotesViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 import kotlinx.coroutines.flow.collectLatest
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Composable
 fun AddEditNotesScreen(navController: NavController, noteId: String?){
     val viewModel: AddEditNotesViewModel = hiltViewModel()
@@ -32,6 +36,7 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
     var isTitleHintVisible by remember { mutableStateOf(true) }
     var isContentHintVisible by remember { mutableStateOf(true) }
     val context = LocalContext.current
+    val connection by connectivityState()
 
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
@@ -70,7 +75,7 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
                 },
                 actions = {
                     IconButton(onClick = {
-                        viewModel.saveNote(title = title, note = content)
+                        viewModel.saveNote(title = title, note = content, connection === ConnectionState.Available)
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Save,

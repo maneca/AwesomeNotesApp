@@ -7,9 +7,11 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
@@ -21,16 +23,21 @@ import com.joao.awesomenotesapp.viewmodel.LoginRegisterViewModel
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.Screen
 
+
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScreen(navController: NavController) {
 
     val viewModel: LoginRegisterViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState()
     val scaffoldState = rememberScaffoldState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val buttonsEnabled = remember { mutableStateOf(true) }
 
     val context = LocalContext.current
     LaunchedEffect(key1 = scaffoldState){
         viewModel.errors.collect{
+            buttonsEnabled.value = true
             scaffoldState.snackbarHostState.showSnackbar(
                 message = it.asString(context),
                 duration = SnackbarDuration.Short
@@ -89,23 +96,29 @@ fun LoginScreen(navController: NavController) {
             Spacer(Modifier.size(16.dp))
             Button(
                 onClick = {
+                    keyboardController?.hide()
                     viewModel.loginUser(email.value.text, password.value.text)
+                    buttonsEnabled.value = false
                 },
                 content = {
                     Text(text = stringResource(R.string.login), color = Color.White)
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = buttonsEnabled.value,
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.Blue)
             )
             Spacer(Modifier.size(5.dp))
             Button(
                 onClick = {
+                    keyboardController?.hide()
                     viewModel.registerUser(email.value.text, password.value.text)
+                    buttonsEnabled.value = false
                 },
                 content = {
                     Text(text = stringResource(R.string.register), color = Color.White)
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = buttonsEnabled.value,
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.Blue)
             )
 

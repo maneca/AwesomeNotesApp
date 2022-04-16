@@ -8,14 +8,14 @@ import com.joao.awesomenotesapp.domain.model.Note
 data class NoteEntity(
     @PrimaryKey val id : String,
     val title: String,
-    val message: String,
+    val content: String,
     val timestamp: Long
 ) {
     fun toNote(): Note {
         return Note(
             id,
             title,
-            message,
+            content,
             timestamp,
         )
     }

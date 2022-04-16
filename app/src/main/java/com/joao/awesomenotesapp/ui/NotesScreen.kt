@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,17 +22,23 @@ import androidx.navigation.NavController
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.Screen
 import com.joao.awesomenotesapp.ui.components.NoteItem
+import com.joao.awesomenotesapp.util.ConnectionState
 import com.joao.awesomenotesapp.util.UiEvent
+import com.joao.awesomenotesapp.util.connectivityState
 import com.joao.awesomenotesapp.viewmodel.NotesViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Composable
 fun NotesScreen(navController: NavController, userId: String?) {
     val viewModel: NotesViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState()
     val scaffoldState = rememberScaffoldState()
+    val connection by connectivityState()
 
+    viewModel.getNotes("eERu49JLMLZcdLADMyygSnHo7Pm1", connection === ConnectionState.Available)
     val context = LocalContext.current
     LaunchedEffect(key1 = scaffoldState){
         viewModel.errors.collect{
@@ -80,7 +87,7 @@ fun NotesScreen(navController: NavController, userId: String?) {
                 backgroundColor = Color.Blue,
                 actions = {
                     IconButton(onClick = {
-                        viewModel.logoutUser(userId!!)
+                        viewModel.logoutUser(userId!!, connection === ConnectionState.Available)
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Logout,
@@ -129,7 +136,7 @@ fun NotesScreen(navController: NavController, userId: String?) {
                             },
                         onDeleteClick = {
                             if(userId != null){
-                                viewModel.deleteNote(userId, state.value.notes[note].id)
+                                viewModel.deleteNote(userId, state.value.notes[note].id, connection === ConnectionState.Available)
                             }
                         }
                     )

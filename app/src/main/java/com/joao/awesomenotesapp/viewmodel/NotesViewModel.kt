@@ -1,14 +1,8 @@
 package com.joao.awesomenotesapp.viewmodel
 
 import android.app.Application
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.ConnectivityManager.*
-import android.net.NetworkCapabilities.*
-import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.joao.awesomenotesapp.NotesApplication
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
@@ -22,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
-    private val app: Application,
+    app: Application,
     private val dispatcher: DispatcherProvider,
     private val repository: NotesRepository
 ) : AndroidViewModel(app) {
@@ -38,11 +32,7 @@ class NotesViewModel @Inject constructor(
 
     private var getNotesJob: Job? = null
 
-    init {
-        getNotes("eERu49JLMLZcdLADMyygSnHo7Pm1", hasInternetConnection())
-    }
-
-    private fun getNotes(userId: String, hasInternetConnection: Boolean) {
+    fun getNotes(userId: String, hasInternetConnection: Boolean) {
         getNotesJob?.cancel()
 
         getNotesJob = viewModelScope.launch {
@@ -81,10 +71,10 @@ class NotesViewModel @Inject constructor(
         }
     }
 
-    fun deleteNote(userId: String, noteId: String){
+    fun deleteNote(userId: String, noteId: String, hasInternetConnection: Boolean){
         viewModelScope.launch {
             repository
-                .deleteNote(userId, noteId, hasInternetConnection())
+                .deleteNote(userId, noteId, hasInternetConnection)
                 .onEach { result ->
                     if (result) {
                         _eventFlow.emit(UiEvent.NoteDeleted)
@@ -97,9 +87,9 @@ class NotesViewModel @Inject constructor(
         }
     }
 
-    fun logoutUser(userId: String){
+    fun logoutUser(userId: String, hasInternetConnection: Boolean){
         viewModelScope.launch {
-            if(hasInternetConnection()){
+            if(hasInternetConnection){
                 repository
                     .logout(userId)
                     .onEach { result ->
@@ -116,32 +106,6 @@ class NotesViewModel @Inject constructor(
             }
 
         }
-    }
-
-    private fun hasInternetConnection(): Boolean{
-        val connectivityManager = getApplication<NotesApplication>().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-            val activeNetwork = connectivityManager.activeNetwork ?: return false
-            val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
-            return when{
-                capabilities.hasTransport(TRANSPORT_WIFI) -> true
-                capabilities.hasTransport(TRANSPORT_CELLULAR) -> true
-                capabilities.hasTransport(TRANSPORT_ETHERNET) -> true
-                else -> false
-            }
-        }else{
-            connectivityManager.activeNetworkInfo?.run {
-                return when(type){
-                    TYPE_WIFI -> true
-                    TYPE_MOBILE -> true
-                    TYPE_ETHERNET -> true
-                    else -> false
-                }
-            }
-        }
-
-        return false
     }
 
     data class NotesState(

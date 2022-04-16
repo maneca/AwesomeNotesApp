@@ -20,6 +20,7 @@ class NotesRepositoryImp(
     private val firebaseAuth: FirebaseAuth,
     private val dao: NoteDao
 ) : NotesRepository {
+
     override fun saveNote(
         userId: String,
         title: String,
