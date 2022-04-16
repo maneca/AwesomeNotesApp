@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,6 +53,12 @@ fun NotesScreen(navController: NavController, userId: String?) {
                 is UiEvent.Failed -> {
                     scaffoldState.snackbarHostState.showSnackbar(
                         message = context.getString(R.string.something_went_wrong),
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                is UiEvent.NoInternetConnection -> {
+                    scaffoldState.snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.no_internet),
                         duration = SnackbarDuration.Short
                     )
                 }

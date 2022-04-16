@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Awesome Notes</string>
     <string name="something_went_wrong">Something went wrong</string>
+    <string name="no_internet">Cannot perform action due to missing internet connection</string>
     <string name="register">Register</string>
     <string name="login">Login</string>
     <string name="enter_password">Enter password</string>

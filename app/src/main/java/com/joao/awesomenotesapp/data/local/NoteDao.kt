@@ -10,13 +10,16 @@ import com.joao.awesomenotesapp.data.local.entity.NoteEntity
 interface NoteDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertNotes(notes: List<NoteEntity>)
+    suspend fun insertNotes(notes: List<NoteEntity>)
 
     @Insert
     suspend fun insertNote(note: NoteEntity)
 
     @Query("DELETE FROM notes")
-    fun deleteNotes()
+    suspend fun deleteNotes()
+
+    @Query("DELETE FROM notes WHERE id = :id")
+    suspend fun deleteNote(id: String)
 
     @Query("SELECT * FROM notes")
     suspend fun getNotes(): List<NoteEntity>

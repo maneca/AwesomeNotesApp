@@ -7,4 +7,5 @@ sealed class UiEvent{
     object UserLoggedOut: UiEvent()
     object NoteSaved : UiEvent()
     object Failed : UiEvent()
+    object NoInternetConnection : UiEvent()
 }
