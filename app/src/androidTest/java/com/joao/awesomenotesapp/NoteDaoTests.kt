@@ -73,7 +73,7 @@ class NoteDaoTests {
     fun insertNote() = runBlocking{
         dao.insertNote(noteA)
 
-        var notes = dao.getNotes()
+        val notes = dao.getNotes()
         Assert.assertEquals(1, notes.size)
 
         Assert.assertEquals(noteA.title, notes[0].title)
@@ -92,5 +92,25 @@ class NoteDaoTests {
         notes = dao.getNotes()
 
         Assert.assertEquals(1, notes.size)
+    }
+
+    @Test
+    fun updateNote() = runBlocking {
+        dao.insertNotes(listOf(noteA))
+
+        var notes = dao.getNotes()
+        Assert.assertEquals(1, notes.size)
+        Assert.assertEquals(noteA.title, notes[0].title)
+
+        val noteC = NoteEntity(
+            id = "sjdnkdgneri94j",
+            title = "Lista de compras22",
+            content = "Batatas, Cebolas, Fruta",
+            timestamp = 2334535345)
+        dao.updateNote(noteC)
+
+        notes = dao.getNotes()
+        Assert.assertEquals(1, notes.size)
+        Assert.assertEquals(noteC.title, notes[0].title)
     }
 }

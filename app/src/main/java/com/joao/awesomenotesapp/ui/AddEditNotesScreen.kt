@@ -16,11 +16,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.joao.awesomenotesapp.R
-import com.joao.awesomenotesapp.util.ConnectionState
-import com.joao.awesomenotesapp.util.UiEvent
-import com.joao.awesomenotesapp.util.connectivityState
+import com.joao.awesomenotesapp.domain.model.Note
+import com.joao.awesomenotesapp.util.*
 import com.joao.awesomenotesapp.viewmodel.AddEditNotesViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -28,21 +26,22 @@ import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Composable
-fun AddEditNotesScreen(navController: NavController, noteId: String?){
-    val viewModel: AddEditNotesViewModel = hiltViewModel()
+fun AddEditNotesScreen(
+    viewModel: AddEditNotesViewModel,
+    navigateBack: () -> Unit,
+    userId: String,
+    noteJson: String
+) {
     val scaffoldState = rememberScaffoldState()
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var isTitleHintVisible by remember { mutableStateOf(true) }
-    var isContentHintVisible by remember { mutableStateOf(true) }
     val context = LocalContext.current
     val connection by connectivityState()
+    val state by viewModel.uiState.collectAsState()
 
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
-            when(event) {
+            when (event) {
                 is UiEvent.NoteSaved -> {
-                    navController.navigateUp()
+                    navigateBack()
                 }
                 is UiEvent.Failed -> {
                     scaffoldState.snackbarHostState.showSnackbar(
@@ -60,22 +59,24 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
             TopAppBar(
                 title = { Text(stringResource(id = R.string.edit_note), color = Color.White) },
                 backgroundColor = Color.Blue,
-                navigationIcon = if (navController.previousBackStackEntry != null) {
-                    {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.White
-                            )
-                        }
+                navigationIcon = {
+                    IconButton(onClick = { navigateBack() }) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
                     }
-                } else {
-                    null
                 },
                 actions = {
                     IconButton(onClick = {
-                        viewModel.saveNote(title = title, note = content, connection === ConnectionState.Available)
+                        viewModel.saveNote(
+                            userId = userId,
+                            id = state.note.id,
+                            title = state.note.title,
+                            note = state.note.content,
+                            hasInternetConnection = connection === ConnectionState.Available
+                        )
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Save,
@@ -86,7 +87,8 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
                 }
             )
         },
-        scaffoldState = scaffoldState) {
+        scaffoldState = scaffoldState
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -94,29 +96,27 @@ fun AddEditNotesScreen(navController: NavController, noteId: String?){
         ) {
             Spacer(modifier = Modifier.height(6.dp))
             TransparentHintTextField(
-                text = title,
-                hint = "Title",
+                text = state.note.title,
+                hint = stringResource(id = R.string.title),
                 onValueChange = {
-                    isTitleHintVisible = false
-                    title = it
+                    viewModel.onUpdateTitle(it)
                 },
                 onFocusChange = {
                 },
-                isHintVisible = isTitleHintVisible,
+                isHintVisible = state.note.title == "",
                 singleLine = true,
                 textStyle = MaterialTheme.typography.h5
             )
             Spacer(modifier = Modifier.height(16.dp))
             TransparentHintTextField(
-                text = content,
-                hint = "Content",
+                text = state.note.content,
+                hint = stringResource(id = R.string.content),
                 onValueChange = {
-                    content = it
-                    isContentHintVisible = false
+                    viewModel.onUpdateContent(it)
                 },
                 onFocusChange = {
                 },
-                isHintVisible = isContentHintVisible,
+                isHintVisible = state.note.content == "",
                 textStyle = MaterialTheme.typography.body1,
                 modifier = Modifier.fillMaxHeight()
             )
@@ -149,7 +149,7 @@ fun TransparentHintTextField(
                     onFocusChange(it)
                 }
         )
-        if(isHintVisible) {
+        if (isHintVisible) {
             Text(text = hint, style = textStyle, color = Color.DarkGray)
         }
     }

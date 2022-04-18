@@ -17,12 +17,12 @@ import java.lang.Exception
 
 class NotesRepositoryImp(
     private val firebaseDatabase: DatabaseReference,
-    private val firebaseAuth: FirebaseAuth,
     private val dao: NoteDao
 ) : NotesRepository {
 
     override fun saveNote(
         userId: String,
+        noteId: String,
         title: String,
         content: String,
         timestamp: Long,
@@ -30,7 +30,12 @@ class NotesRepositoryImp(
     ): Flow<Boolean>  = flow{
         if(hasInternetConnection){
             val ref = firebaseDatabase.database.getReference("users")
-            val key = ref.child(userId).child("notes").push().key
+            val key = if(noteId == ""){
+                ref.child(userId).child("notes").push().key
+            }else{
+                noteId
+            }
+
             if (key != null) {
                 val note = Note(key, title, content, timestamp)
                 try{
@@ -44,15 +49,15 @@ class NotesRepositoryImp(
                 }
             }
         }else{
-            val note = NoteEntity(timestamp.toString(), title, content, timestamp)
-            dao.insertNote(note)
+
+            val note = NoteEntity(if(noteId == "") timestamp.toString() else noteId, title, content, timestamp)
+            if(noteId=="")
+                dao.insertNote(note)
+            else
+                dao.updateNote(note)
             emit(true)
         }
 
-    }
-
-    override fun editNote(title: String, content: String): Flow<Boolean> {
-        TODO("Not yet implemented")
     }
 
     override fun deleteNote(userId: String, noteId: String, hasInternetConnection: Boolean): Flow<Boolean> = flow {
@@ -96,7 +101,7 @@ class NotesRepositoryImp(
                     dao.deleteNotes()
 
                     dao.insertNotes(remoteNotes.map { it.toNoteEntity() })
-                    emit(Resource.Success(remoteNotes))
+                    emit(Resource.Success(remoteNotes.sortedByDescending { it.timestamp }))
                 }else{
                     for(note in notes){
                         try{
@@ -108,7 +113,7 @@ class NotesRepositoryImp(
                         }
                     }
 
-                    emit(Resource.Success(notes))
+                    emit(Resource.Success(notes.sortedByDescending{ it.timestamp }))
                 }
 
             }
@@ -126,10 +131,5 @@ class NotesRepositoryImp(
         }else{
             emit(Resource.Success(notes))
         }
-    }
-
-    override fun logout(userId: String): Flow<Boolean> = flow {
-        firebaseAuth.signOut()
-        emit(true)
     }
 }

@@ -15,4 +15,11 @@
 
     <string name="note_deleted">Note deleted</string>
     <string name="edit_note">Edit note</string>
+
+    <string name="title">Title</string>
+    <string name="content">Content</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirmation">Are you sure you want to logout?</string>
+    <string name="confirm">Yes</string>
+    <string name="cancel">No</string>
 </resources>

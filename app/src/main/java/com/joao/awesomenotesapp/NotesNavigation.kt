@@ -1,58 +1,118 @@
 package com.joao.awesomenotesapp
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.joao.awesomenotesapp.ui.AddEditNotesScreen
-import com.joao.awesomenotesapp.ui.LoginScreen
-import com.joao.awesomenotesapp.ui.NotesScreen
+import com.joao.awesomenotesapp.domain.model.Note
+import com.joao.awesomenotesapp.ui.*
+import com.joao.awesomenotesapp.util.toJson
+import com.joao.awesomenotesapp.viewmodel.*
 
 @Composable
 fun NotesNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.LoginScreen.route){
-        composable(Screen.LoginScreen.route){
-            LoginScreen(navController = navController)
+    NavHost(navController = navController, startDestination = Screen.LoginScreen.route) {
+        composable(Screen.LoginScreen.route) {
+            val viewModel = hiltViewModel<LoginRegisterViewModel>()
+            LoginScreen(
+                viewModel = viewModel,
+                onSubmit = {
+                    navController.navigate(Screen.NotesScreen.withArgs(it))
+                })
         }
         composable(
             route = Screen.NotesScreen.route + "/{userId}",
             arguments = listOf(
-                navArgument("userId"){
+                navArgument("userId") {
                     type = NavType.StringType
                 }
             )
-        ){ entry->
+        ) { entry ->
+            val viewModel = hiltViewModel<NotesViewModel>()
             entry.arguments?.getString("userId")?.let { id ->
-                NotesScreen(navController = navController, userId = id)
+                NotesScreen(
+                    viewModel = viewModel,
+                    navigateToLogin = {
+                        navController.navigate(Screen.LoginScreen.route)
+                    },
+                    navigateToNote = { userId: String, note: Note ->
+                        navController.navigate(
+                            Screen.EditNotesScreen
+                                .withArgs(
+                                    userId,
+                                    note.toJson()
+                                )
+                        )
+                    },
+                    navigateToDialog = { userId ->
+                        navController.navigate(
+                            Screen.LogoutDialog
+                                .withArgs(userId)
+                        )
+                    },
+                    userId = id
+                )
             }
         }
         composable(
-            route = Screen.EditNotesScreen.route,
-            /*arguments = listOf(
-                navArgument("noteId") {
+            route = Screen.EditNotesScreen.route + "/{userId}/{note}",
+            arguments = listOf(
+                navArgument("userId") {
                     type = NavType.StringType
-                    defaultValue = null
-                    nullable = true
+                    defaultValue = ""
+                },
+                navArgument("note") {
+                    type = NavType.StringType
+                    defaultValue = Note().toJson()
                 }
-            )*/
-        ){ /*entry->
-            entry.arguments?.getString("noteId")?.let { id ->
-                AddEditNotesScreen(navController = navController, noteId = id)
-            }*/
-            AddEditNotesScreen(navController = navController, noteId = "")
+            )
+        ) { entry ->
+            val viewModel = hiltViewModel<AddEditNotesViewModel>()
+            AddEditNotesScreen(
+                viewModel = viewModel,
+                navigateBack = {
+                    if (navController.previousBackStackEntry != null)
+                        navController.navigateUp()
+                },
+                userId = entry.arguments?.getString("userId") ?: "",
+                noteJson = entry.arguments?.getString("note") ?: ""
+            )
+        }
+        dialog(
+            route = "logout/{userId}",
+            arguments = listOf(
+                navArgument("userId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { entry ->
+            val viewModel = hiltViewModel<LogoutViewModel>()
+            LogoutDialog(
+                viewModel = viewModel,
+                userId = entry.arguments?.getString("userId") ?: "",
+                onDismiss = {
+                    navController.popBackStack()
+                },
+                onConfirm = {
+                    navController.navigate(Screen.LoginScreen.route)
+                })
         }
     }
 }
 
-sealed class Screen(val route: String){
+sealed class Screen(val route: String) {
     object LoginScreen : Screen("login_screen")
     object NotesScreen : Screen("notes_screen")
     object EditNotesScreen : Screen("edit_notes_screen")
+    object LogoutDialog : Screen("logout")
 
-    fun withArgs(vararg args: String) : String{
+    fun withArgs(vararg args: String?): String {
         return buildString {
             append(route)
             args.forEach { arg ->

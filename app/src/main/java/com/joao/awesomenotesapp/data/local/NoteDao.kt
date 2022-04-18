@@ -1,9 +1,6 @@
 package com.joao.awesomenotesapp.data.local
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import com.joao.awesomenotesapp.data.local.entity.NoteEntity
 
 @Dao
@@ -14,6 +11,9 @@ interface NoteDao {
 
     @Insert
     suspend fun insertNote(note: NoteEntity)
+
+    @Update
+    suspend fun updateNote(note: NoteEntity)
 
     @Query("DELETE FROM notes")
     suspend fun deleteNotes()

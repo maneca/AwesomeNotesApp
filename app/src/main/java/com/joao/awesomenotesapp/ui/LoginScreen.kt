@@ -26,7 +26,9 @@ import com.joao.awesomenotesapp.Screen
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    viewModel: LoginRegisterViewModel,
+    onSubmit: (String) -> Unit) {
 
     val viewModel: LoginRegisterViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState()
@@ -128,7 +130,7 @@ fun LoginScreen(navController: NavController) {
                 }
                 state.value.user != null -> {
                     LaunchedEffect(Unit) {
-                        navController.navigate(Screen.NotesScreen.withArgs(state.value.user!!.uid))
+                        onSubmit(state.value.user!!.uid)
                     }
                 }
             }

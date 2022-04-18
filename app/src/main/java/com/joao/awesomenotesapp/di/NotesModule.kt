@@ -12,6 +12,8 @@ import com.joao.awesomenotesapp.util.DispatcherProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.joao.awesomenotesapp.data.repository.LogoutRepositoryImp
+import com.joao.awesomenotesapp.domain.repository.LogoutRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,7 +38,15 @@ class NotesModule {
     fun provideNotesRepository(
         database: NoteDatabase
     ): NotesRepository {
-        return NotesRepositoryImp(Firebase.database.reference, FirebaseAuth.getInstance(), database.noteDao)
+        return NotesRepositoryImp(Firebase.database.reference, database.noteDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLogoutRepository(
+        database: NoteDatabase
+    ): LogoutRepository {
+        return LogoutRepositoryImp(FirebaseAuth.getInstance())
     }
 
     @Provides

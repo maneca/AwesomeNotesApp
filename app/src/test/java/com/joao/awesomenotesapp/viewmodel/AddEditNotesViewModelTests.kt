@@ -1,25 +1,22 @@
 package com.joao.awesomenotesapp.viewmodel
 
-import android.content.Context
-import android.location.LocationManager
-import android.net.ConnectivityManager
-import android.net.NetworkInfo
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth
 import com.joao.awesomenotesapp.MainCoroutineRule
 import com.joao.awesomenotesapp.NotesApplication
+import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.DispatcherProvider
 import com.joao.awesomenotesapp.util.UiEvent
+import com.joao.awesomenotesapp.util.toJson
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -31,8 +28,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.Mock
-import org.mockito.Mockito.`when`
 
 
 @ExperimentalCoroutinesApi
@@ -79,11 +74,14 @@ class AddEditNotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
 
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(), true ) } returns flowOf(true)
+        coEvery { mockRepo.saveNote(any(), any(), any(), any(), any(),true ) } returns flowOf(true)
 
-        viewModel = AddEditNotesViewModel(mockApplication, testDispatcherProvider, mockRepo)
+        val savedStateHandle = SavedStateHandle().apply {
+            set("note", Note().toJson())
+        }
+        viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
-            viewModel.saveNote("111", "2323", true)
+            viewModel.saveNote("aaa", "111", "title", "note", true)
             val emission = awaitItem()
             Truth.assertThat(emission).isEqualTo(UiEvent.NoteSaved)
         }
@@ -94,11 +92,14 @@ class AddEditNotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
 
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(), true ) } returns flowOf(false)
+        coEvery { mockRepo.saveNote(any(), any(), any(), any(),any(), true ) } returns flowOf(false)
 
-        viewModel = AddEditNotesViewModel(mockApplication, testDispatcherProvider, mockRepo)
+        val savedStateHandle = SavedStateHandle().apply {
+            set("note", Note().toJson())
+        }
+        viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
-            viewModel.saveNote("111", "2323", true)
+            viewModel.saveNote("aaa", "111", "title", "note", true)
             val emission = awaitItem()
             Truth.assertThat(emission).isEqualTo(UiEvent.Failed)
         }

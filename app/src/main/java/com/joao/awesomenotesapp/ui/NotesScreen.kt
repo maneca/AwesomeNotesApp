@@ -18,9 +18,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.joao.awesomenotesapp.R
-import com.joao.awesomenotesapp.Screen
+import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.ui.components.NoteItem
 import com.joao.awesomenotesapp.util.ConnectionState
 import com.joao.awesomenotesapp.util.UiEvent
@@ -32,13 +31,17 @@ import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Composable
-fun NotesScreen(navController: NavController, userId: String?) {
-    val viewModel: NotesViewModel = hiltViewModel()
+fun NotesScreen(
+    viewModel: NotesViewModel,
+    navigateToLogin: () -> Unit,
+                navigateToNote: (String, Note) -> Unit,
+                navigateToDialog: (String) -> Unit,
+                userId: String) {
     val state = viewModel.state.collectAsState()
     val scaffoldState = rememberScaffoldState()
     val connection by connectivityState()
 
-    viewModel.getNotes("eERu49JLMLZcdLADMyygSnHo7Pm1", connection === ConnectionState.Available)
+    viewModel.getNotes(userId, connection === ConnectionState.Available)
     val context = LocalContext.current
     LaunchedEffect(key1 = scaffoldState){
         viewModel.errors.collect{
@@ -70,7 +73,7 @@ fun NotesScreen(navController: NavController, userId: String?) {
                     )
                 }
                 is UiEvent.UserLoggedOut -> {
-                    navController.navigate(Screen.LoginScreen.route)
+                    navigateToLogin()
                 }
             }
         }
@@ -87,7 +90,7 @@ fun NotesScreen(navController: NavController, userId: String?) {
                 backgroundColor = Color.Blue,
                 actions = {
                     IconButton(onClick = {
-                        viewModel.logoutUser(userId!!, connection === ConnectionState.Available)
+                        navigateToDialog(userId)
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Logout,
@@ -101,7 +104,7 @@ fun NotesScreen(navController: NavController, userId: String?) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    navController.navigate(Screen.EditNotesScreen.route)
+                    navigateToNote(userId, Note())
                 },
                 backgroundColor = Color.Blue,
                 content = {
@@ -126,18 +129,17 @@ fun NotesScreen(navController: NavController, userId: String?) {
             LazyColumn(modifier = Modifier
                 .fillMaxSize()
                 .padding(8.dp)) {
-                items(state.value.notes.size) { note ->
+                items(state.value.notes.size) { position ->
+                    val note = state.value.notes[position]
                     NoteItem(
-                        note = state.value.notes[note],
+                        note = note,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-
+                                navigateToNote(userId, note)
                             },
                         onDeleteClick = {
-                            if(userId != null){
-                                viewModel.deleteNote(userId, state.value.notes[note].id, connection === ConnectionState.Available)
-                            }
+                            viewModel.deleteNote(userId, note.id, connection === ConnectionState.Available)
                         }
                     )
                     Spacer(modifier = Modifier.height(16.dp))

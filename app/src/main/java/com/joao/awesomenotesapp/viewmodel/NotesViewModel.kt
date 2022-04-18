@@ -1,7 +1,6 @@
 package com.joao.awesomenotesapp.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.model.Note
@@ -16,10 +15,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
-    app: Application,
     private val dispatcher: DispatcherProvider,
     private val repository: NotesRepository
-) : AndroidViewModel(app) {
+) : ViewModel() {
 
     private val _state = MutableStateFlow(NotesState())
     val state = _state.asStateFlow()
@@ -85,27 +83,7 @@ class NotesViewModel @Inject constructor(
                 .flowOn(dispatcher.io())
                 .launchIn(this)
         }
-    }
-
-    fun logoutUser(userId: String, hasInternetConnection: Boolean){
-        viewModelScope.launch {
-            if(hasInternetConnection){
-                repository
-                    .logout(userId)
-                    .onEach { result ->
-                        if (result) {
-                            _eventFlow.emit(UiEvent.UserLoggedOut)
-                        } else {
-                            _eventFlow.emit(UiEvent.Failed)
-                        }
-                    }
-                    .flowOn(dispatcher.io())
-                    .launchIn(this)
-            }else{
-                _eventFlow.emit(UiEvent.NoInternetConnection)
-            }
-
-        }
+        getNotes(userId, hasInternetConnection)
     }
 
     data class NotesState(
