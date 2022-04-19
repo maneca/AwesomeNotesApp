@@ -2,13 +2,11 @@ package com.joao.awesomenotesapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.repository.LoginRegisterRepository
-import com.joao.awesomenotesapp.util.CustomExceptions
-import com.joao.awesomenotesapp.util.DispatcherProvider
-import com.joao.awesomenotesapp.util.Resource
-import com.joao.awesomenotesapp.util.UiText
 import com.google.firebase.auth.FirebaseUser
+import com.joao.awesomenotesapp.util.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -18,6 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginRegisterViewModel @Inject constructor(
     private val dispatcher: DispatcherProvider,
+    private val firebaseAuth: FirebaseAuth,
     private val repository: LoginRegisterRepository
 ) : ViewModel() {
 
@@ -27,12 +26,28 @@ class LoginRegisterViewModel @Inject constructor(
     private val validationFieldsChannel = Channel<UiText>()
     val errors = validationFieldsChannel.receiveAsFlow()
 
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
+    init {
+        viewModelScope.launch {
+            if(firebaseAuth.currentUser != null){
+                _eventFlow.emit(UiEvent.UserLoggedIn)
+                _state.value = state.value.copy(
+                    user = firebaseAuth.currentUser,
+                    loading = false
+                )
+            }
+        }
+    }
+
     fun loginUser(email: String, password: String) {
 
         viewModelScope.launch {
             if(validateFields(email, password)){
                 repository.loginUser(email, password)
-                    .onEach { result ->
+                    .flowOn(dispatcher.io())
+                    .collect { result ->
                         when (result) {
                             is Resource.Success -> {
                                 _state.value = state.value.copy(
@@ -60,8 +75,8 @@ class LoginRegisterViewModel @Inject constructor(
                             }
                         }
                     }
-                    .flowOn(dispatcher.io())
-                    .launchIn(this)
+
+
             }
         }
     }
@@ -70,7 +85,8 @@ class LoginRegisterViewModel @Inject constructor(
         viewModelScope.launch {
             if(validateFields(email, password)){
                 repository.registerUser(email, password)
-                    .onEach { result ->
+                    .flowOn(dispatcher.io())
+                    .collect { result ->
                         when (result) {
                             is Resource.Success -> {
                                 _state.value = state.value.copy(
@@ -81,11 +97,12 @@ class LoginRegisterViewModel @Inject constructor(
                             is Resource.Error -> {
                                 _state.value = state.value.copy(
                                     user = result.data,
-                                    loading = false)
+                                    loading = false
+                                )
 
-                                if (result.exception is CustomExceptions.ConflictException){
+                                if (result.exception is CustomExceptions.ConflictException) {
                                     validationFieldsChannel.send(UiText.DynamicString(result.exception.message!!))
-                                }else{
+                                } else {
                                     validationFieldsChannel.send(UiText.StringResource(R.string.something_went_wrong))
                                 }
                             }
@@ -97,8 +114,6 @@ class LoginRegisterViewModel @Inject constructor(
                             }
                         }
                     }
-                    .flowOn(dispatcher.io())
-                    .launchIn(this)
             }
         }
     }

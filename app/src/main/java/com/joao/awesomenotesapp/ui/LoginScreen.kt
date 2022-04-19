@@ -17,11 +17,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.joao.awesomenotesapp.viewmodel.LoginRegisterViewModel
 import com.joao.awesomenotesapp.R
-import com.joao.awesomenotesapp.Screen
+import com.joao.awesomenotesapp.util.UiEvent
 
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -30,7 +28,6 @@ fun LoginScreen(
     viewModel: LoginRegisterViewModel,
     onSubmit: (String) -> Unit) {
 
-    val viewModel: LoginRegisterViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState()
     val scaffoldState = rememberScaffoldState()
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -38,12 +35,24 @@ fun LoginScreen(
 
     val context = LocalContext.current
     LaunchedEffect(key1 = scaffoldState){
+
         viewModel.errors.collect{
             buttonsEnabled.value = true
             scaffoldState.snackbarHostState.showSnackbar(
                 message = it.asString(context),
                 duration = SnackbarDuration.Short
             )
+        }
+    }
+
+    LaunchedEffect(key1 = true){
+
+        viewModel.eventFlow.collect{event ->
+            when(event) {
+                is UiEvent.UserLoggedIn -> {
+                    state.value.user?.let { onSubmit(it.uid) }
+                }
+            }
         }
     }
 

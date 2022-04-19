@@ -43,10 +43,14 @@ class NotesModule {
 
     @Provides
     @Singleton
-    fun provideLogoutRepository(
-        database: NoteDatabase
-    ): LogoutRepository {
+    fun provideLogoutRepository(): LogoutRepository {
         return LogoutRepositoryImp(FirebaseAuth.getInstance())
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
     }
 
     @Provides
