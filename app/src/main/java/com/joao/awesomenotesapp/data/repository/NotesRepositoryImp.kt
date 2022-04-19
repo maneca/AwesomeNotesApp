@@ -1,7 +1,6 @@
 package com.joao.awesomenotesapp.data.repository
 
 import com.google.firebase.FirebaseException
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.database.DatabaseReference
 import com.joao.awesomenotesapp.data.local.NoteDao
@@ -96,7 +95,11 @@ class NotesRepositoryImp(
                     remoteNotes.add(note!!)
                 }
 
-                if(remoteNotes.size > notes.size ||
+                if(remoteNotes.size == 0){
+                    dao.deleteNotes()
+                    emit(Resource.Success(listOf()))
+                }
+                else if(remoteNotes.size > notes.size ||
                         remoteNotes.maxByOrNull { it.timestamp }!!.timestamp > notes.maxByOrNull { it.timestamp }!!.timestamp){
                     dao.deleteNotes()
 
@@ -115,7 +118,6 @@ class NotesRepositoryImp(
 
                     emit(Resource.Success(notes.sortedByDescending{ it.timestamp }))
                 }
-
             }
             catch (exception : FirebaseAuthException){
                 emit(

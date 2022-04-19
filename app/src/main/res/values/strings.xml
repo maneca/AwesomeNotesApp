@@ -3,14 +3,18 @@
     <string name="something_went_wrong">Something went wrong</string>
     <string name="no_internet">Cannot perform action due to missing internet connection</string>
     <string name="register">Register</string>
-    <string name="login">Login</string>
-    <string name="enter_password">Enter password</string>
-    <string name="enter_email">Enter email</string>
+    <string name="login">Sign in</string>
+    <string name="return_login">Return to sign in</string>
+    <string name="create_account">Create an account</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="enter_password">password</string>
+    <string name="enter_email">email</string>
     <string name="required">Required</string>
 
     <string name="email_mandatory">Email is mandatory</string>
     <string name="email_invalid">Email is invalid</string>
     <string name="password_mandatory">Password is mandatory</string>
+    <string name="password_dont_match">Passwords do not match</string>
     <string name="password_short">Password must have at least 6 characters</string>
 
     <string name="note_deleted">Note deleted</string>

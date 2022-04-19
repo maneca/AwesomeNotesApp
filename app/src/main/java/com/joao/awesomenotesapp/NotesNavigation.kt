@@ -18,9 +18,23 @@ fun NotesNavigation() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.LoginScreen.route) {
         composable(Screen.LoginScreen.route) {
-            val viewModel = hiltViewModel<LoginRegisterViewModel>()
+            val viewModel = hiltViewModel<LoginViewModel>()
             LoginScreen(
                 viewModel = viewModel,
+                navigateToRegister = {
+                    navController.navigate(Screen.RegisterScreen.route)
+                },
+                onSubmit = {
+                    navController.navigate(Screen.NotesScreen.withArgs(it))
+                })
+        }
+        composable(Screen.RegisterScreen.route) {
+            val viewModel = hiltViewModel<RegisterViewModel>()
+            RegisterScreen(
+                viewModel = viewModel,
+                returnToLogin = {
+                    navController.popBackStack()
+                },
                 onSubmit = {
                     navController.navigate(Screen.NotesScreen.withArgs(it))
                 })
@@ -108,6 +122,7 @@ fun NotesNavigation() {
 
 sealed class Screen(val route: String) {
     object LoginScreen : Screen("login_screen")
+    object RegisterScreen : Screen("register_screen")
     object NotesScreen : Screen("notes_screen")
     object EditNotesScreen : Screen("edit_notes_screen")
     object LogoutDialog : Screen("logout")

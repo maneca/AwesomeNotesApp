@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.ui.components.NoteItem

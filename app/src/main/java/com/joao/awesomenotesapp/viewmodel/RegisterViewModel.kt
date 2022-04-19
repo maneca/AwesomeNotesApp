@@ -2,10 +2,9 @@ package com.joao.awesomenotesapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
 import com.joao.awesomenotesapp.R
-import com.joao.awesomenotesapp.domain.repository.LoginRegisterRepository
-import com.google.firebase.auth.FirebaseUser
+import com.joao.awesomenotesapp.domain.repository.LoginRepository
+import com.joao.awesomenotesapp.domain.repository.RegisterRepository
 import com.joao.awesomenotesapp.util.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -14,13 +13,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginRegisterViewModel @Inject constructor(
+class RegisterViewModel @Inject constructor(
     private val dispatcher: DispatcherProvider,
-    private val firebaseAuth: FirebaseAuth,
-    private val repository: LoginRegisterRepository
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(UserState())
+    private val repository: RegisterRepository
+): ViewModel() {
+    private val _state = MutableStateFlow(LoginViewModel.UserState())
     val state = _state.asStateFlow()
 
     private val validationFieldsChannel = Channel<UiText>()
@@ -29,61 +26,9 @@ class LoginRegisterViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    init {
+    fun registerUser(email: String, password: String, confirmPassword: String) {
         viewModelScope.launch {
-            if(firebaseAuth.currentUser != null){
-                _eventFlow.emit(UiEvent.UserLoggedIn)
-                _state.value = state.value.copy(
-                    user = firebaseAuth.currentUser,
-                    loading = false
-                )
-            }
-        }
-    }
-
-    fun loginUser(email: String, password: String) {
-
-        viewModelScope.launch {
-            if(validateFields(email, password)){
-                repository.loginUser(email, password)
-                    .flowOn(dispatcher.io())
-                    .collect { result ->
-                        when (result) {
-                            is Resource.Success -> {
-                                _state.value = state.value.copy(
-                                    user = result.data,
-                                    loading = false
-                                )
-                            }
-                            is Resource.Error -> {
-                                _state.value = state.value.copy(
-                                    user = result.data,
-                                    loading = false
-                                )
-
-                                if (result.exception is CustomExceptions.ConflictException){
-                                    validationFieldsChannel.send(UiText.DynamicString(result.exception.message!!))
-                                }else{
-                                    validationFieldsChannel.send(UiText.StringResource(R.string.something_went_wrong))
-                                }
-                            }
-                            is Resource.Loading -> {
-                                _state.value = state.value.copy(
-                                    user = result.data,
-                                    loading = true
-                                )
-                            }
-                        }
-                    }
-
-
-            }
-        }
-    }
-
-    fun registerUser(email: String, password: String) {
-        viewModelScope.launch {
-            if(validateFields(email, password)){
+            if(validateFields(email, password, confirmPassword)){
                 repository.registerUser(email, password)
                     .flowOn(dispatcher.io())
                     .collect { result ->
@@ -93,6 +38,7 @@ class LoginRegisterViewModel @Inject constructor(
                                     user = result.data,
                                     loading = false
                                 )
+                                _eventFlow.emit(UiEvent.UserLoggedIn)
                             }
                             is Resource.Error -> {
                                 _state.value = state.value.copy(
@@ -118,7 +64,7 @@ class LoginRegisterViewModel @Inject constructor(
         }
     }
 
-    private suspend fun validateFields(email: String, password: String): Boolean{
+    private suspend fun validateFields(email: String, password: String, confirmPassword: String): Boolean{
         when {
             email.isEmpty() -> {
                 validationFieldsChannel.send(UiText.StringResource(R.string.email_mandatory))
@@ -126,6 +72,10 @@ class LoginRegisterViewModel @Inject constructor(
             }
             password.isEmpty() -> {
                 validationFieldsChannel.send(UiText.StringResource(R.string.password_mandatory))
+                return false
+            }
+            password != confirmPassword -> {
+                validationFieldsChannel.send(UiText.StringResource(R.string.password_dont_match))
                 return false
             }
             email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()-> {
@@ -139,10 +89,4 @@ class LoginRegisterViewModel @Inject constructor(
         }
         return true
     }
-
-    data class UserState(
-        val user: FirebaseUser? = null,
-        val loading: Boolean = false
-    )
 }
-
