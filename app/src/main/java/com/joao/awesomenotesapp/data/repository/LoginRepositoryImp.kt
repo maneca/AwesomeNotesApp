@@ -5,35 +5,41 @@ import com.joao.awesomenotesapp.util.CustomExceptions
 import com.joao.awesomenotesapp.util.Resource
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.*
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.callbackFlow
 
 class LoginRepositoryImp(
     private val firebaseAuth: FirebaseAuth
 ) : LoginRepository {
-    override fun loginUser(email: String, password: String): Flow<Resource<FirebaseUser?>> = flow {
+    override fun loginUser(email: String, password: String): Flow<Resource<FirebaseUser?>> =
+        callbackFlow {
+            trySend(Resource.Loading())
+            firebaseAuth.signInWithEmailAndPassword(email, password)
+                .addOnSuccessListener {
+                    trySend(Resource.Success(it.user))
+                }
+                .addOnFailureListener { exception ->
+                    when (exception) {
+                        is FirebaseAuthException ->
+                            trySend(
+                                Resource.Error(
+                                    exception = exception.localizedMessage?.let { it ->
+                                        CustomExceptions.ConflictException(it)
+                                    })
+                            )
+                        is FirebaseAuthInvalidUserException ->
+                            trySend(
+                                Resource.Error(
+                                    exception = exception.localizedMessage?.let { it ->
+                                        CustomExceptions.ConflictException(it)
+                                    })
+                            )
+                        is FirebaseException ->
+                            trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
+                    }
 
-        emit(Resource.Loading())
-        try {
-            val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
-            emit(Resource.Success(result.user))
-        } catch (exception: FirebaseAuthException) {
-            emit(
-                Resource.Error(
-                    exception = exception.localizedMessage?.let { it ->
-                        CustomExceptions.ConflictException(it)
-                    })
-            )
-        } catch (exception: FirebaseAuthInvalidUserException) {
-            emit(
-                Resource.Error(
-                    exception = exception.localizedMessage?.let { it ->
-                        CustomExceptions.ConflictException(it)
-                    })
-            )
-        }catch (exception: FirebaseException) {
-            emit(Resource.Error(exception = CustomExceptions.ApiNotResponding))
+                }
+            awaitClose()
         }
-    }
 }

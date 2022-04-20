@@ -1,5 +1,6 @@
 package com.joao.awesomenotesapp.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joao.awesomenotesapp.R
@@ -8,6 +9,7 @@ import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,6 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val dispatcher: DispatcherProvider,
     private val repository: NotesRepository
 ) : ViewModel() {
@@ -28,15 +31,17 @@ class NotesViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    private var getNotesJob: Job? = null
+    init{
+        savedStateHandle.get<String>("userId")?.let { getNotes(userId = it) }
+    }
 
-    fun getNotes(userId: String, hasInternetConnection: Boolean) {
-        getNotesJob?.cancel()
+    fun getNotes(userId: String) {
 
-        getNotesJob = viewModelScope.launch {
+        viewModelScope.launch {
             repository
-                .getNotes(userId, hasInternetConnection)
-                .onEach {result ->
+                .getNotes(userId)
+                .flowOn(dispatcher.io())
+                .collect {result ->
                     when(result){
                         is Resource.Success ->{
                             _state.value = state.value.copy(
@@ -64,26 +69,38 @@ class NotesViewModel @Inject constructor(
                         }
                     }
                 }
-                .flowOn(dispatcher.io())
-                .launchIn(this)
         }
     }
 
-    fun deleteNote(userId: String, noteId: String, hasInternetConnection: Boolean){
+    fun deleteNote(userId: String, noteId: String){
         viewModelScope.launch {
             repository
-                .deleteNote(userId, noteId, hasInternetConnection)
-                .onEach { result ->
+                .deleteNote(noteId)
+                .flowOn(dispatcher.io())
+                .collect { result ->
                     if (result) {
                         _eventFlow.emit(UiEvent.NoteDeleted)
                     } else {
                         _eventFlow.emit(UiEvent.Failed)
                     }
                 }
-                .flowOn(dispatcher.io())
-                .launchIn(this)
         }
-        getNotes(userId, hasInternetConnection)
+        getNotes(userId)
+    }
+
+    fun syncToBackend(userId: String,hasInternetConnection: Boolean){
+        viewModelScope.launch{
+            repository
+                .syncNotesToBackend(userId, hasInternetConnection)
+                .flowOn(dispatcher.io())
+                .collect { result ->
+                    when(result){
+                        is Resource.Success -> _eventFlow.emit(UiEvent.SyncSuccessful)
+                        is Resource.Error -> _eventFlow.emit(UiEvent.Failed)
+                    }
+                }
+        }
+
     }
 
     data class NotesState(

@@ -1,23 +1,32 @@
 package com.joao.awesomenotesapp.ui
 
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.joao.awesomenotesapp.R
-import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.util.*
 import com.joao.awesomenotesapp.viewmodel.AddEditNotesViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,13 +38,23 @@ import kotlinx.coroutines.flow.collectLatest
 fun AddEditNotesScreen(
     viewModel: AddEditNotesViewModel,
     navigateBack: () -> Unit,
-    userId: String,
-    noteJson: String
+    userId: String
 ) {
     val scaffoldState = rememberScaffoldState()
     val context = LocalContext.current
     val connection by connectivityState()
     val state by viewModel.uiState.collectAsState()
+
+    var imageUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+    val launcher = rememberLauncherForActivityResult(contract =
+    ActivityResultContracts.GetContent()) { uri: Uri? ->
+        imageUri = uri
+    }
+    val bitmap =  remember {
+        mutableStateOf<Bitmap?>(null)
+    }
 
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
@@ -69,18 +88,26 @@ fun AddEditNotesScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { launcher.launch("image/*") }) {
+                        Icon(
+                            imageVector = Icons.Filled.Image,
+                            contentDescription = "",
+                            tint = Color.White
+                        )
+                    }
                     IconButton(onClick = {
                         viewModel.saveNote(
                             userId = userId,
                             id = state.note.id,
                             title = state.note.title,
-                            note = state.note.content,
+                            content = state.note.content,
+                            imageUri = imageUri ?: Uri.EMPTY,
                             hasInternetConnection = connection === ConnectionState.Available
                         )
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Save,
-                            contentDescription = "Save",
+                            contentDescription = "",
                             tint = Color.White
                         )
                     }
@@ -94,6 +121,23 @@ fun AddEditNotesScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+            imageUri?.let {
+                if (Build.VERSION.SDK_INT < 28) {
+                    bitmap.value = MediaStore.Images
+                        .Media.getBitmap(context.contentResolver,it)
+
+                } else {
+                    val source = ImageDecoder
+                        .createSource(context.contentResolver,it)
+                    bitmap.value = ImageDecoder.decodeBitmap(source)
+                }
+
+                bitmap.value?.let {  btm ->
+                    Image(bitmap = btm.asImageBitmap(),
+                        contentDescription =null,
+                        modifier = Modifier.size(200.dp).align(Alignment.CenterHorizontally))
+                }
+            }
             Spacer(modifier = Modifier.height(6.dp))
             TransparentHintTextField(
                 text = state.note.title,

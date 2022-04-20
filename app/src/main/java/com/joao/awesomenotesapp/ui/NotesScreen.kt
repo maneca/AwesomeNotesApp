@@ -40,7 +40,6 @@ fun NotesScreen(
     val scaffoldState = rememberScaffoldState()
     val connection by connectivityState()
 
-    viewModel.getNotes(userId, connection === ConnectionState.Available)
     val context = LocalContext.current
     LaunchedEffect(key1 = scaffoldState){
         viewModel.errors.collect{
@@ -48,6 +47,12 @@ fun NotesScreen(
                 message = it.asString(context),
                 duration = SnackbarDuration.Short
             )
+        }
+    }
+
+    LaunchedEffect(key1 = true){
+        if(connection == ConnectionState.Available){
+            viewModel.syncToBackend(userId, true)
         }
     }
 
@@ -138,7 +143,7 @@ fun NotesScreen(
                                 navigateToNote(userId, note)
                             },
                         onDeleteClick = {
-                            viewModel.deleteNote(userId, note.id, connection === ConnectionState.Available)
+                            viewModel.deleteNote(userId, note.id)
                         }
                     )
                     Spacer(modifier = Modifier.height(16.dp))

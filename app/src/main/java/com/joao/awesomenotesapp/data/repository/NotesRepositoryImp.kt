@@ -1,137 +1,95 @@
 package com.joao.awesomenotesapp.data.repository
 
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.FirebaseAuthException
+import android.net.Uri
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.storage.StorageReference
 import com.joao.awesomenotesapp.data.local.NoteDao
 import com.joao.awesomenotesapp.data.local.entity.NoteEntity
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.CustomExceptions
 import com.joao.awesomenotesapp.util.Resource
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.tasks.await
-import java.lang.Exception
+import java.io.File
 
 class NotesRepositoryImp(
     private val firebaseDatabase: DatabaseReference,
+    private val firebaseStorage: StorageReference,
     private val dao: NoteDao
 ) : NotesRepository {
 
     override fun saveNote(
-        userId: String,
         noteId: String,
         title: String,
         content: String,
-        timestamp: Long,
+        imageUri: Uri,
+        timestamp: Long
+    ): Flow<Boolean> = flow {
+        val note = imageUri.path?.let { imageUri ->
+            NoteEntity(
+                timestamp.toString(),
+                title,
+                content,
+                imageUri,
+                timestamp
+            )
+        }
+        note?.let { dao.insertNote(it) }
+        emit(true)
+
+    }
+
+    override fun deleteNote(
+        noteId: String
+    ): Flow<Boolean> = flow {
+        dao.deleteNote(noteId)
+        emit(true)
+    }
+
+    override fun syncNotesToBackend(
+        userId: String,
         hasInternetConnection: Boolean
-    ): Flow<Boolean>  = flow{
+    ):Flow<Resource<Boolean>> = callbackFlow {
         if(hasInternetConnection){
+            val notes = dao.getNotes().map { it.toNote() }
             val ref = firebaseDatabase.database.getReference("users")
-            val key = if(noteId == ""){
-                ref.child(userId).child("notes").push().key
-            }else{
-                noteId
-            }
-
-            if (key != null) {
-                val note = Note(key, title, content, timestamp)
-                try{
-                    ref.child(userId).child("notes").child(key).setValue(note).await()
-                    emit(true)
-                }catch (exception : FirebaseAuthException){
-                    emit(false)
-                }
-                catch (exception: Exception) {
-                    emit(false)
-                }
-            }
-        }else{
-
-            val note = NoteEntity(if(noteId == "") timestamp.toString() else noteId, title, content, timestamp)
-            if(noteId=="")
-                dao.insertNote(note)
-            else
-                dao.updateNote(note)
-            emit(true)
-        }
-
-    }
-
-    override fun deleteNote(userId: String, noteId: String, hasInternetConnection: Boolean): Flow<Boolean> = flow {
-        val ref = firebaseDatabase.database.getReference("users")
-
-        if(hasInternetConnection){
-            try {
-                ref.child(userId).child("notes").child(noteId).removeValue().await()
-                emit(true)
-            }
-            catch (_: Exception) {
-                emit(false)
-            }
-            catch (_: FirebaseException) {
-                emit(false)
+            ref.child(userId).child("notes").setValue("")
+            for (note in notes) {
+                    ref.child(userId).child("notes").child(note.id).setValue(note)
+                        .addOnSuccessListener {
+                            if(note.imagePath != ""){
+                                val imageUri = Uri.fromFile(File(note.imagePath))
+                                val imageRef = firebaseStorage.child("${imageUri.lastPathSegment}")
+                                imageRef
+                                    .putFile(imageUri)
+                                    .addOnSuccessListener {
+                                        trySend(Resource.Success(true))
+                                    }
+                                    .addOnFailureListener{
+                                        trySend(Resource.Error(exception = CustomExceptions.UnknownException))
+                                    }
+                            }
+                        }
+                        .addOnFailureListener {
+                            trySend(Resource.Error(exception = CustomExceptions.UnknownException))
+                        }
             }
         }else{
-            dao.deleteNote(noteId)
-            emit(true)
+            trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
         }
+        awaitClose()
     }
 
-    override fun getNotes(userId: String, hasInternetConnection: Boolean): Flow<Resource<List<Note>>> = flow {
+    override fun getNotes(
+        userId: String
+    ): Flow<Resource<List<Note>>> = flow {
 
         emit(Resource.Loading())
         val notes = dao.getNotes().map { it.toNote() }
 
-        if(hasInternetConnection){
-            try {
-                val ref = firebaseDatabase.database.getReference("users")
-                val result = ref.child(userId).child("notes").get().await()
-
-                val remoteNotes = mutableListOf<Note>()
-                for (dataValues in result.children) {
-                    val note: Note? = dataValues.getValue(Note::class.java)
-                    remoteNotes.add(note!!)
-                }
-
-                if(remoteNotes.size == 0){
-                    dao.deleteNotes()
-                    emit(Resource.Success(listOf()))
-                }
-                else if(remoteNotes.size > notes.size ||
-                        remoteNotes.maxByOrNull { it.timestamp }!!.timestamp > notes.maxByOrNull { it.timestamp }!!.timestamp){
-                    dao.deleteNotes()
-
-                    dao.insertNotes(remoteNotes.map { it.toNoteEntity() })
-                    emit(Resource.Success(remoteNotes.sortedByDescending { it.timestamp }))
-                }else{
-                    for(note in notes){
-                        try{
-                            ref.child(userId).child("notes").child(note.id).setValue(note).await()
-                        }catch (exception : FirebaseAuthException){
-                            emit(Resource.Error(exception = CustomExceptions.UnknownException))
-                        }catch (exception: Exception) {
-                            emit(Resource.Error(exception = CustomExceptions.UnknownException))
-                        }
-                    }
-
-                    emit(Resource.Success(notes.sortedByDescending{ it.timestamp }))
-                }
-            }
-            catch (exception : FirebaseAuthException){
-                emit(
-                    Resource.Error(
-                        exception = exception.localizedMessage?.let { it ->
-                            CustomExceptions.ConflictException(it)
-                        })
-                )
-            }
-            catch (exception: Exception) {
-                emit(Resource.Error(exception = CustomExceptions.UnknownException))
-            }
-        }else{
-            emit(Resource.Success(notes))
-        }
+        emit(Resource.Success(notes))
     }
 }

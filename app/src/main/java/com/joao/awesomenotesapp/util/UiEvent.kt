@@ -9,4 +9,5 @@ sealed class UiEvent{
     object Failed : UiEvent()
     object NoInternetConnection : UiEvent()
     object UserLoggedIn: UiEvent()
+    object SyncSuccessful: UiEvent()
 }

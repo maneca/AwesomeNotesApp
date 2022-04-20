@@ -1,5 +1,6 @@
 package com.joao.awesomenotesapp
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -18,6 +19,7 @@ fun NotesNavigation() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.LoginScreen.route) {
         composable(Screen.LoginScreen.route) {
+            BackHandler(true) {}
             val viewModel = hiltViewModel<LoginViewModel>()
             LoginScreen(
                 viewModel = viewModel,
@@ -29,11 +31,12 @@ fun NotesNavigation() {
                 })
         }
         composable(Screen.RegisterScreen.route) {
+            BackHandler(true) {}
             val viewModel = hiltViewModel<RegisterViewModel>()
             RegisterScreen(
                 viewModel = viewModel,
                 returnToLogin = {
-                    navController.popBackStack()
+                    navController.navigateUp()
                 },
                 onSubmit = {
                     navController.navigate(Screen.NotesScreen.withArgs(it))
@@ -47,6 +50,7 @@ fun NotesNavigation() {
                 }
             )
         ) { entry ->
+            BackHandler(true) {}
             val viewModel = hiltViewModel<NotesViewModel>()
             entry.arguments?.getString("userId")?.let { id ->
                 NotesScreen(
@@ -86,15 +90,17 @@ fun NotesNavigation() {
                 }
             )
         ) { entry ->
+            BackHandler(true) {}
             val viewModel = hiltViewModel<AddEditNotesViewModel>()
             AddEditNotesScreen(
                 viewModel = viewModel,
                 navigateBack = {
-                    if (navController.previousBackStackEntry != null)
-                        navController.navigateUp()
+                    val notesScreen = Screen.NotesScreen.withArgs(entry.arguments?.getString("userId"))
+                    navController.navigate(notesScreen){
+                        popUpTo(notesScreen) { inclusive = true }
+                    }
                 },
-                userId = entry.arguments?.getString("userId") ?: "",
-                noteJson = entry.arguments?.getString("note") ?: ""
+                userId = entry.arguments?.getString("userId") ?: ""
             )
         }
         dialog(
@@ -106,12 +112,13 @@ fun NotesNavigation() {
                 }
             )
         ) { entry ->
+            BackHandler(true) {}
             val viewModel = hiltViewModel<LogoutViewModel>()
             LogoutDialog(
                 viewModel = viewModel,
                 userId = entry.arguments?.getString("userId") ?: "",
                 onDismiss = {
-                    navController.popBackStack()
+                    navController.navigateUp()
                 },
                 onConfirm = {
                     navController.navigate(Screen.LoginScreen.route)

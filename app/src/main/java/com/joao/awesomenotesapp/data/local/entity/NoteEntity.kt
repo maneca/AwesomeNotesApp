@@ -9,6 +9,7 @@ data class NoteEntity(
     @PrimaryKey val id : String,
     val title: String,
     val content: String,
+    val imagePath: String,
     val timestamp: Long
 ) {
     fun toNote(): Note {
@@ -16,6 +17,7 @@ data class NoteEntity(
             id,
             title,
             content,
+            imagePath,
             timestamp,
         )
     }
