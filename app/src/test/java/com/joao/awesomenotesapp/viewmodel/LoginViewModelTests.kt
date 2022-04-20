@@ -1,22 +1,24 @@
 package com.joao.awesomenotesapp.viewmodel
 
-import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.lifecycle.SavedStateHandle
+import androidx.compose.ui.Modifier.Companion.any
+import androidx.core.util.PatternsCompat
 import app.cash.turbine.test
 import com.google.common.truth.Truth
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.joao.awesomenotesapp.MainCoroutineRule
-import com.joao.awesomenotesapp.NotesApplication
-import com.joao.awesomenotesapp.domain.model.Note
-import com.joao.awesomenotesapp.domain.repository.NotesRepository
+import com.joao.awesomenotesapp.domain.repository.LoginRepository
+import com.joao.awesomenotesapp.domain.repository.LogoutRepository
+import com.joao.awesomenotesapp.util.CustomExceptions
 import com.joao.awesomenotesapp.util.DispatcherProvider
+import com.joao.awesomenotesapp.util.Resource
 import com.joao.awesomenotesapp.util.UiEvent
-import com.joao.awesomenotesapp.util.toJson
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.mockkStatic
+import io.mockk.mockkObject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,13 +33,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import java.io.File
-
 
 @ExperimentalCoroutinesApi
 @RunWith(JUnit4::class)
-class AddEditNotesViewModelTests {
-
+class LoginViewModelTests {
     @Rule
     @JvmField
     var instantTaskExecutorRule = InstantTaskExecutorRule()
@@ -46,12 +45,15 @@ class AddEditNotesViewModelTests {
     val coroutineRule = MainCoroutineRule()
 
     @MockK
-    private lateinit var mockRepo: NotesRepository
+    private lateinit var mockRepo: LoginRepository
 
     @MockK
-    private lateinit var mockUri: Uri
+    private lateinit var mockFirebaseUser: FirebaseUser
 
-    private lateinit var viewModel: AddEditNotesViewModel
+    @MockK
+    private lateinit var mockFirebaseAuth: FirebaseAuth
+
+    private lateinit var viewModel: LoginViewModel
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testDispatcherProvider = object : DispatcherProvider {
@@ -61,6 +63,7 @@ class AddEditNotesViewModelTests {
         override fun unconfined(): CoroutineDispatcher = testDispatcher
 
     }
+
 
     @Before
     fun setup() {
@@ -74,40 +77,36 @@ class AddEditNotesViewModelTests {
     }
 
     @Test
-    fun `save note, successful`() = runTest (testDispatcher){
+    fun `user login, successful`() = runTest (testDispatcher){
 
         Truth.assertThat(mockRepo).isNotNull()
-        mockkStatic(Uri::class)
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(), any() ) } returns flowOf(true)
-        every { Uri.fromFile(File("")) } returns mockUri
+        mockkObject(PatternsCompat.EMAIL_ADDRESS)
+        coEvery { mockRepo.loginUser(any(), any() ) } returns flowOf(Resource.Success(mockFirebaseUser))
+        coEvery { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+        every { PatternsCompat.EMAIL_ADDRESS.matcher(any()).matches() } returns true
 
-        val savedStateHandle = SavedStateHandle().apply {
-            set("note", Note().toJson())
-        }
-        viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
-        viewModel.eventFlow.test {
-            viewModel.saveNote("aaa", "111", "title", "note", Uri.fromFile(File("")), true)
+        viewModel = LoginViewModel(testDispatcherProvider, mockFirebaseAuth, mockRepo)
+        viewModel.state.test {
+            viewModel.loginUser("111","jhsdbfksd")
             val emission = awaitItem()
-            Truth.assertThat(emission).isEqualTo(UiEvent.NoteSaved)
+            Truth.assertThat(emission.user).isNotNull()
         }
     }
 
     @Test
-    fun `save note, fail`() = runTest (testDispatcher){
+    fun `user login, failed`() = runTest (testDispatcher){
 
         Truth.assertThat(mockRepo).isNotNull()
-        mockkStatic(Uri::class)
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(),any() ) } returns flowOf(false)
-        every { Uri.fromFile(File("")) } returns mockUri
+        mockkObject(PatternsCompat.EMAIL_ADDRESS)
+        coEvery { mockRepo.loginUser(any(), any() ) } returns flowOf(Resource.Success(null))
+        coEvery { mockFirebaseAuth.currentUser } returns null
+        every { PatternsCompat.EMAIL_ADDRESS.matcher(any()).matches() } returns true
 
-        val savedStateHandle = SavedStateHandle().apply {
-            set("note", Note().toJson())
-        }
-        viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
-        viewModel.eventFlow.test {
-            viewModel.saveNote("aaa", "111", "title", "note", Uri.fromFile(File("")), true)
+        viewModel = LoginViewModel(testDispatcherProvider, mockFirebaseAuth, mockRepo)
+        viewModel.state.test {
+            viewModel.loginUser("111","jhsdbfksd")
             val emission = awaitItem()
-            Truth.assertThat(emission).isEqualTo(UiEvent.Failed)
+            Truth.assertThat(emission.user).isNull()
         }
     }
 

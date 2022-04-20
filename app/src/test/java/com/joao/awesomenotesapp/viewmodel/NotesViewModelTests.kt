@@ -66,11 +66,14 @@ class NotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
 
-        coEvery { mockRepo.deleteNote(any(), any(), any() ) } returns flowOf(true)
+        coEvery { mockRepo.deleteNote(any() ) } returns flowOf(true)
+        val savedStateHandle = SavedStateHandle().apply {
+            set("note", Note().toJson())
+        }
 
-        viewModel = NotesViewModel(testDispatcherProvider, mockRepo)
+        viewModel = NotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
-            viewModel.deleteNote("111", "223",true)
+            viewModel.deleteNote("111", "223")
             val emission = awaitItem()
             Truth.assertThat(emission).isEqualTo(UiEvent.NoteDeleted)
         }
@@ -81,11 +84,14 @@ class NotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
 
-        coEvery { mockRepo.deleteNote(any(), any(), any() ) } returns flowOf(false)
+        coEvery { mockRepo.deleteNote(any()) } returns flowOf(false)
 
-        viewModel = NotesViewModel(testDispatcherProvider, mockRepo)
+        val savedStateHandle = SavedStateHandle().apply {
+            set("note", Note().toJson())
+        }
+        viewModel = NotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
-            viewModel.deleteNote("111", "223",true)
+            viewModel.deleteNote("111", "223")
             val emission = awaitItem()
             Truth.assertThat(emission).isEqualTo(UiEvent.Failed)
         }
@@ -96,11 +102,13 @@ class NotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
 
-        coEvery { mockRepo.getNotes(any(), any() ) } returns flowOf(Resource.Success(listOf()))
-
-        viewModel = NotesViewModel(testDispatcherProvider, mockRepo)
+        coEvery { mockRepo.getNotes(any()) } returns flowOf(Resource.Success(listOf()))
+        val savedStateHandle = SavedStateHandle().apply {
+            set("note", Note().toJson())
+        }
+        viewModel = NotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
         viewModel.state.test {
-            viewModel.getNotes("111",true)
+            viewModel.getNotes("111")
             val emission = awaitItem()
             Truth.assertThat(emission.notes.size).isEqualTo(0)
             Truth.assertThat(emission.loading).isEqualTo(false)

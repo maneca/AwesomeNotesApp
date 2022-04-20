@@ -85,7 +85,7 @@ class LoginViewModel @Inject constructor(
                 validationFieldsChannel.send(UiText.StringResource(R.string.password_mandatory))
                 return false
             }
-            email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()-> {
+            email.isNotEmpty() && !androidx.core.util.PatternsCompat.EMAIL_ADDRESS.matcher(email).matches()-> {
                 validationFieldsChannel.send(UiText.StringResource(R.string.email_invalid))
                 return false
             }
