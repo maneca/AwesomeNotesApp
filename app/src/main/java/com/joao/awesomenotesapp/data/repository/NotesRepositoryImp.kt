@@ -2,6 +2,7 @@ package com.joao.awesomenotesapp.data.repository
 
 import android.net.Uri
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.storage.StorageException
 import com.google.firebase.storage.StorageReference
 import com.joao.awesomenotesapp.data.local.NoteDao
 import com.joao.awesomenotesapp.data.local.entity.NoteEntity
@@ -101,7 +102,8 @@ class NotesRepositoryImp(
         imageRef.getFile(localFile).addOnSuccessListener {
             trySend(Resource.Success(Uri.fromFile(localFile)))
         }.addOnFailureListener {
-            trySend(Resource.Error(exception = CustomExceptions.UnknownException))
+            if(it !is StorageException)
+                trySend(Resource.Error(exception = CustomExceptions.UnknownException))
         }
 
         awaitClose()

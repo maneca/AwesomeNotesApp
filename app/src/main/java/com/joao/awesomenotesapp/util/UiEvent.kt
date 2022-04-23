@@ -3,7 +3,7 @@ package com.joao.awesomenotesapp.util
 import android.net.Uri
 
 
-sealed class UiEvent(val uri: Uri = Uri.EMPTY){
+sealed class UiEvent(){
 
     object NoteDeleted : UiEvent()
     object UserLoggedOut: UiEvent()
@@ -11,7 +11,6 @@ sealed class UiEvent(val uri: Uri = Uri.EMPTY){
     object Failed : UiEvent()
     object NoInternetConnection : UiEvent()
     object UserLoggedIn: UiEvent()
-    object SyncSuccessful: UiEvent()
     object UploadingNote: UiEvent()
-    class ImageUrl(uri: Uri) : UiEvent(uri)
+    class ImageUrl(val uri: Uri) : UiEvent()
 }

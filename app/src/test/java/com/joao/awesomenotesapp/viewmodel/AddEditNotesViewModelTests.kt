@@ -9,9 +9,7 @@ import com.joao.awesomenotesapp.MainCoroutineRule
 import com.joao.awesomenotesapp.NotesApplication
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
-import com.joao.awesomenotesapp.util.DispatcherProvider
-import com.joao.awesomenotesapp.util.UiEvent
-import com.joao.awesomenotesapp.util.toJson
+import com.joao.awesomenotesapp.util.*
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.every
@@ -78,7 +76,7 @@ class AddEditNotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
         mockkStatic(Uri::class)
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(), any() ) } returns flowOf(true)
+        coEvery { mockRepo.saveNote(any(), any(), any(), any(), any() ) } returns flowOf(Resource.Success(true))
         every { Uri.fromFile(File("")) } returns mockUri
 
         val savedStateHandle = SavedStateHandle().apply {
@@ -86,7 +84,7 @@ class AddEditNotesViewModelTests {
         }
         viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
-            viewModel.saveNote("aaa", "111", "title", "note", Uri.fromFile(File("")), true)
+            viewModel.saveNote("aaa", "111", "title", Uri.fromFile(File("")))
             val emission = awaitItem()
             Truth.assertThat(emission).isEqualTo(UiEvent.NoteSaved)
         }
@@ -97,7 +95,7 @@ class AddEditNotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
         mockkStatic(Uri::class)
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(),any() ) } returns flowOf(false)
+        coEvery { mockRepo.saveNote(any(), any(), any(), any(),any() ) } returns flowOf(Resource.Error(exception = CustomExceptions.UnknownException))
         every { Uri.fromFile(File("")) } returns mockUri
 
         val savedStateHandle = SavedStateHandle().apply {
@@ -105,7 +103,7 @@ class AddEditNotesViewModelTests {
         }
         viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
-            viewModel.saveNote("aaa", "111", "title", "note", Uri.fromFile(File("")), true)
+            viewModel.saveNote("aaa", "111", "title", Uri.fromFile(File("")))
             val emission = awaitItem()
             Truth.assertThat(emission).isEqualTo(UiEvent.Failed)
         }
