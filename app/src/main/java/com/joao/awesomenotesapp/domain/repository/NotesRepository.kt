@@ -13,7 +13,7 @@ interface NotesRepository {
 
     fun getNotes(userId: String): Flow<Resource<List<Note>>>
 
-    fun syncNotesToBackend(userId: String, hasInternetConnection: Boolean): Flow<Resource<Boolean>>
+    suspend fun syncNotesToBackend(userId: String)
 
     fun getImageUrlForNote(noteId: String) : Flow<Resource<Uri>>
 }

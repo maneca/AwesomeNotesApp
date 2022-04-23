@@ -19,20 +19,14 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.util.*
 import com.joao.awesomenotesapp.viewmodel.AddEditNotesViewModel
@@ -44,8 +38,7 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun AddEditNotesScreen(
     viewModel: AddEditNotesViewModel,
-    navigateBack: () -> Unit,
-    userId: String
+    navigateBack: () -> Unit
 ) {
     val scaffoldState = rememberScaffoldState()
     val context = LocalContext.current

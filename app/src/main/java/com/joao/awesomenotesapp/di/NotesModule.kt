@@ -17,6 +17,7 @@ import com.joao.awesomenotesapp.data.repository.LogoutRepositoryImp
 import com.joao.awesomenotesapp.data.repository.RegisterRepositoryImp
 import com.joao.awesomenotesapp.domain.repository.LogoutRepository
 import com.joao.awesomenotesapp.domain.repository.RegisterRepository
+import com.joao.awesomenotesapp.viewmodel.SyncViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -62,6 +63,12 @@ class NotesModule {
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth {
         return FirebaseAuth.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSyncViewModel(repo: NotesRepository): SyncViewModel {
+        return SyncViewModel(repo)
     }
 
     @Provides

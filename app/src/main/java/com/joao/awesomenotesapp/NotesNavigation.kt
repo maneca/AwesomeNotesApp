@@ -99,8 +99,7 @@ fun NotesNavigation() {
                     navController.navigate(notesScreen){
                         popUpTo(notesScreen) { inclusive = true }
                     }
-                },
-                userId = entry.arguments?.getString("userId") ?: ""
+                }
             )
         }
         dialog(

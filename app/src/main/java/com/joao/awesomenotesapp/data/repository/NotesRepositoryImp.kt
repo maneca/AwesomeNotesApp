@@ -32,14 +32,14 @@ class NotesRepositoryImp(
 
         emit(Resource.Loading())
         val note = NoteEntity(
-                timestamp.toString(),
-                title,
-                content,
-                timestamp
-            )
+            timestamp.toString(),
+            title,
+            content,
+            timestamp
+        )
 
         dao.insertNote(note)
-        if(imageUri != Uri.EMPTY){
+        if (imageUri != Uri.EMPTY) {
             val imageRef = firebaseStorage.child(note.id)
             imageRef.putFile(imageUri).await()
 
@@ -54,27 +54,13 @@ class NotesRepositoryImp(
         emit(true)
     }
 
-    override fun syncNotesToBackend(
-        userId: String,
-        hasInternetConnection: Boolean
-    ):Flow<Resource<Boolean>> = callbackFlow {
-        if(hasInternetConnection){
-            val notes = dao.getNotes().map { it.toNote() }
-            val ref = firebaseDatabase.database.getReference("users")
-            ref.child(userId).child("notes").setValue("")
-            for (note in notes) {
-                    ref.child(userId).child("notes").child(note.id).setValue(note)
-                        .addOnSuccessListener {
-                            trySend(Resource.Success(true))
-                        }
-                        .addOnFailureListener {
-                            trySend(Resource.Error(exception = CustomExceptions.UnknownException))
-                        }
-            }
-        }else{
-            trySend(Resource.Error(exception = CustomExceptions.ApiNotResponding))
+    override suspend fun syncNotesToBackend(userId: String) {
+        val notes = dao.getNotes().map { it.toNote() }
+        val ref = firebaseDatabase.database.getReference("users")
+        ref.child(userId).child("notes").setValue("")
+        for (note in notes) {
+            ref.child(userId).child("notes").child(note.id).setValue(note)
         }
-        awaitClose()
     }
 
     override fun getNotes(
@@ -84,7 +70,7 @@ class NotesRepositoryImp(
         trySend(Resource.Loading())
         val notes = dao.getNotes().map { it.toNote() }
 
-        if(notes.isEmpty()){
+        if (notes.isEmpty()) {
             val ref = firebaseDatabase.database.getReference("users")
 
             ref.child(userId).child("notes").get()
@@ -99,13 +85,13 @@ class NotesRepositoryImp(
                 .addOnFailureListener {
                     trySend(Resource.Error(exception = CustomExceptions.UnknownException))
                 }
-        }else{
+        } else {
             trySend(Resource.Success(notes))
         }
         awaitClose()
     }
 
-    override fun getImageUrlForNote(noteId: String) : Flow<Resource<Uri>> = callbackFlow{
+    override fun getImageUrlForNote(noteId: String): Flow<Resource<Uri>> = callbackFlow {
 
         trySend(Resource.Loading())
         val imageRef = firebaseStorage.child(noteId)

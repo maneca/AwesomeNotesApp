@@ -87,21 +87,6 @@ class NotesViewModel @Inject constructor(
 
     }
 
-    fun syncToBackend(userId: String,hasInternetConnection: Boolean){
-        viewModelScope.launch{
-            repository
-                .syncNotesToBackend(userId, hasInternetConnection)
-                .flowOn(dispatcher.io())
-                .collect { result ->
-                    when(result){
-                        is Resource.Success -> _eventFlow.emit(UiEvent.SyncSuccessful)
-                        is Resource.Error -> _eventFlow.emit(UiEvent.Failed)
-                    }
-                }
-        }
-
-    }
-
     data class NotesState(
         val notes: List<Note> = emptyList(),
         val loading : Boolean = false
