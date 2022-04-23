@@ -31,25 +31,42 @@ class AddEditNotesViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    fun saveNote(userId: String, id: String, title: String, content: String, imageUri: Uri, hasInternetConnection: Boolean) {
-        viewModelScope.launch(SupervisorJob()) {
+    init {
+        if(_uiState.value.note.id != "")
+            getImageUrlForNote(_uiState.value.note.id)
+    }
+
+    fun saveNote(id: String, title: String, content: String, imageUri: Uri) {
+        viewModelScope.launch {
             repository
                 .saveNote(id, title, content, imageUri, System.currentTimeMillis())
                 .flowOn(dispatcher.io())
                 .collect { result ->
-                    if (result) {
-                        _eventFlow.emit(UiEvent.NoteSaved)
-                    } else {
-                        _eventFlow.emit(UiEvent.Failed)
+                    when(result){
+                        is Resource.Loading ->
+                            _eventFlow.emit(UiEvent.UploadingNote)
+                        is Resource.Success ->
+                            _eventFlow.emit(UiEvent.NoteSaved)
+                        else ->
+                            _eventFlow.emit(UiEvent.Failed)
                     }
                 }
+        }
+    }
+
+    private fun getImageUrlForNote(noteId: String){
+        viewModelScope.launch {
             repository
-                .syncNotesToBackend(userId, hasInternetConnection)
+                .getImageUrlForNote(noteId)
                 .flowOn(dispatcher.io())
                 .collect { result ->
                     when(result){
-                        is Resource.Success -> _eventFlow.emit(UiEvent.SyncSuccessful)
-                        is Resource.Error -> _eventFlow.emit(UiEvent.Failed)
+                        is Resource.Success ->
+                            _eventFlow.emit(UiEvent.ImageUrl(result.data!!))
+                        is Resource.Loading ->
+                            _eventFlow.emit(UiEvent.UploadingNote)
+                        else ->
+                            _eventFlow.emit(UiEvent.Failed)
                     }
                 }
         }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
 import java.io.File
 
 class NotesRepositoryImp(
@@ -27,19 +28,23 @@ class NotesRepositoryImp(
         content: String,
         imageUri: Uri,
         timestamp: Long
-    ): Flow<Boolean> = flow {
-        val note = imageUri.path?.let { imageUri ->
-            NoteEntity(
+    ): Flow<Resource<Boolean>> = flow {
+
+        emit(Resource.Loading())
+        val note = NoteEntity(
                 timestamp.toString(),
                 title,
                 content,
-                imageUri,
                 timestamp
             )
-        }
-        note?.let { dao.insertNote(it) }
-        emit(true)
 
+        dao.insertNote(note)
+        if(imageUri != Uri.EMPTY){
+            val imageRef = firebaseStorage.child(note.id)
+            imageRef.putFile(imageUri).await()
+
+        }
+        emit(Resource.Success(true))
     }
 
     override fun deleteNote(
@@ -60,18 +65,7 @@ class NotesRepositoryImp(
             for (note in notes) {
                     ref.child(userId).child("notes").child(note.id).setValue(note)
                         .addOnSuccessListener {
-                            if(note.imagePath != ""){
-                                val imageUri = Uri.fromFile(File(note.imagePath))
-                                val imageRef = firebaseStorage.child("${imageUri.lastPathSegment}")
-                                imageRef
-                                    .putFile(imageUri)
-                                    .addOnSuccessListener {
-                                        trySend(Resource.Success(true))
-                                    }
-                                    .addOnFailureListener{
-                                        trySend(Resource.Error(exception = CustomExceptions.UnknownException))
-                                    }
-                            }
+                            trySend(Resource.Success(true))
                         }
                         .addOnFailureListener {
                             trySend(Resource.Error(exception = CustomExceptions.UnknownException))
@@ -85,11 +79,46 @@ class NotesRepositoryImp(
 
     override fun getNotes(
         userId: String
-    ): Flow<Resource<List<Note>>> = flow {
+    ): Flow<Resource<List<Note>>> = callbackFlow {
 
-        emit(Resource.Loading())
+        trySend(Resource.Loading())
         val notes = dao.getNotes().map { it.toNote() }
 
-        emit(Resource.Success(notes))
+        if(notes.isEmpty()){
+            val ref = firebaseDatabase.database.getReference("users")
+
+            ref.child(userId).child("notes").get()
+                .addOnSuccessListener {
+                    val remoteNotes = mutableListOf<Note>()
+                    for (dataValues in it.children) {
+                        val note: Note? = dataValues.getValue(Note::class.java)
+                        remoteNotes.add(note!!)
+                    }
+                    trySend(Resource.Success(remoteNotes))
+                }
+                .addOnFailureListener {
+                    trySend(Resource.Error(exception = CustomExceptions.UnknownException))
+                }
+        }else{
+            trySend(Resource.Success(notes))
+        }
+        awaitClose()
     }
+
+    override fun getImageUrlForNote(noteId: String) : Flow<Resource<Uri>> = callbackFlow{
+
+        trySend(Resource.Loading())
+        val imageRef = firebaseStorage.child(noteId)
+
+        val localFile = File.createTempFile(noteId, "jpg")
+
+        imageRef.getFile(localFile).addOnSuccessListener {
+            trySend(Resource.Success(Uri.fromFile(localFile)))
+        }.addOnFailureListener {
+            trySend(Resource.Error(exception = CustomExceptions.UnknownException))
+        }
+
+        awaitClose()
+    }
+
 }

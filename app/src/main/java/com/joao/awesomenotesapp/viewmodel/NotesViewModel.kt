@@ -78,12 +78,13 @@ class NotesViewModel @Inject constructor(
                 .collect { result ->
                     if (result) {
                         _eventFlow.emit(UiEvent.NoteDeleted)
+                        getNotes(userId)
                     } else {
                         _eventFlow.emit(UiEvent.Failed)
                     }
                 }
         }
-        getNotes(userId)
+
     }
 
     fun syncToBackend(userId: String,hasInternetConnection: Boolean){

@@ -50,11 +50,11 @@ fun NotesScreen(
         }
     }
 
-    LaunchedEffect(key1 = true){
+    /*LaunchedEffect(key1 = true){
         if(connection == ConnectionState.Available){
             viewModel.syncToBackend(userId, true)
         }
-    }
+    }*/
 
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
