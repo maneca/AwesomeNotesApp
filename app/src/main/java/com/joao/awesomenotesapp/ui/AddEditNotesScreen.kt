@@ -43,7 +43,7 @@ fun AddEditNotesScreen(
     val scaffoldState = rememberScaffoldState()
     val context = LocalContext.current
     val connection by connectivityState()
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateLifecycleAware()
     var showLoading by remember { mutableStateOf(false) }
 
     var imageUri by remember {

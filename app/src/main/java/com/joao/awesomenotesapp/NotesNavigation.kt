@@ -17,7 +17,17 @@ import com.joao.awesomenotesapp.viewmodel.*
 @Composable
 fun NotesNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.LoginScreen.route) {
+    NavHost(navController = navController, startDestination = Screen.MainScreen.route) {
+
+        composable(Screen.MainScreen.route){
+            BackHandler(true) {}
+            val viewModel = hiltViewModel<MainViewModel>()
+            MainScreen(
+                viewModel = viewModel,
+                onNavigateToLogin = { navController.navigate(Screen.LoginScreen.route) },
+                onNavigateToNotes = { navController.navigate(Screen.NotesScreen.withArgs(it)) }
+            )
+        }
         composable(Screen.LoginScreen.route) {
             BackHandler(true) {}
             val viewModel = hiltViewModel<LoginViewModel>()
@@ -127,6 +137,7 @@ fun NotesNavigation() {
 }
 
 sealed class Screen(val route: String) {
+    object MainScreen : Screen("main_screen")
     object LoginScreen : Screen("login_screen")
     object RegisterScreen : Screen("register_screen")
     object NotesScreen : Screen("notes_screen")

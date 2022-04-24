@@ -26,17 +26,6 @@ class LoginViewModel @Inject constructor(
     private val validationFieldsChannel = Channel<UiText>()
     val errors = validationFieldsChannel.receiveAsFlow()
 
-    init {
-        viewModelScope.launch {
-            if(firebaseAuth.currentUser != null){
-                _state.value = state.value.copy(
-                    user = firebaseAuth.currentUser,
-                    loading = false
-                )
-            }
-        }
-    }
-
     fun loginUser(email: String, password: String) {
 
         viewModelScope.launch {

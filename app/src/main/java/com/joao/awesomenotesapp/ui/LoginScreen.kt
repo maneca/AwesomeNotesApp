@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.joao.awesomenotesapp.viewmodel.LoginViewModel
 import com.joao.awesomenotesapp.R
+import com.joao.awesomenotesapp.util.collectAsStateLifecycleAware
 
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -35,7 +36,7 @@ fun LoginScreen(
     navigateToRegister: () -> Unit,
     onSubmit: (String) -> Unit) {
 
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateLifecycleAware()
     val scaffoldState = rememberScaffoldState()
     val keyboardController = LocalSoftwareKeyboardController.current
     val buttonsEnabled = remember { mutableStateOf(true) }

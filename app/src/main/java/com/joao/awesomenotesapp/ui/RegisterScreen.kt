@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.util.UiEvent
+import com.joao.awesomenotesapp.util.collectAsStateLifecycleAware
 import com.joao.awesomenotesapp.viewmodel.RegisterViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -34,7 +35,7 @@ fun RegisterScreen(
     onSubmit: (String) -> Unit,
     returnToLogin: () -> Unit
 ) {
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateLifecycleAware()
     val emailValue = remember { mutableStateOf("") }
     val passwordValue = remember { mutableStateOf("") }
     val confirmPasswordValue = remember { mutableStateOf("") }

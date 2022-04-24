@@ -8,8 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,9 +18,8 @@ import androidx.compose.ui.unit.dp
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.ui.components.NoteItem
-import com.joao.awesomenotesapp.util.ConnectionState
 import com.joao.awesomenotesapp.util.UiEvent
-import com.joao.awesomenotesapp.util.connectivityState
+import com.joao.awesomenotesapp.util.collectAsStateLifecycleAware
 import com.joao.awesomenotesapp.viewmodel.NotesViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
@@ -36,9 +33,8 @@ fun NotesScreen(
                 navigateToNote: (String, Note) -> Unit,
                 navigateToDialog: (String) -> Unit,
                 userId: String) {
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateLifecycleAware()
     val scaffoldState = rememberScaffoldState()
-    val connection by connectivityState()
 
     val context = LocalContext.current
     LaunchedEffect(key1 = scaffoldState){
@@ -49,12 +45,6 @@ fun NotesScreen(
             )
         }
     }
-
-    /*LaunchedEffect(key1 = true){
-        if(connection == ConnectionState.Available){
-            viewModel.syncToBackend(userId, true)
-        }
-    }*/
 
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
