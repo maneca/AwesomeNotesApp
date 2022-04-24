@@ -2,7 +2,6 @@ package com.joao.awesomenotesapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.domain.repository.LoginRepository
 import com.google.firebase.auth.FirebaseUser
@@ -16,7 +15,6 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val dispatcher: DispatcherProvider,
-    private val firebaseAuth: FirebaseAuth,
     private val repository: LoginRepository
 ) : ViewModel() {
 

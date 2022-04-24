@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.joao.awesomenotesapp.R
+import com.joao.awesomenotesapp.ui.components.TransparentHintTextField
 import com.joao.awesomenotesapp.util.*
 import com.joao.awesomenotesapp.viewmodel.AddEditNotesViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -194,37 +195,6 @@ fun AddEditNotesScreen(
                 textStyle = MaterialTheme.typography.body1,
                 modifier = Modifier.fillMaxHeight()
             )
-        }
-    }
-}
-
-@Composable
-fun TransparentHintTextField(
-    text: String,
-    hint: String,
-    modifier: Modifier = Modifier,
-    isHintVisible: Boolean = true,
-    onValueChange: (String) -> Unit,
-    textStyle: TextStyle = TextStyle(),
-    singleLine: Boolean = false,
-    onFocusChange: (FocusState) -> Unit
-) {
-    Box(
-        modifier = modifier
-    ) {
-        BasicTextField(
-            value = text,
-            onValueChange = onValueChange,
-            singleLine = singleLine,
-            textStyle = textStyle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged {
-                    onFocusChange(it)
-                }
-        )
-        if (isHintVisible) {
-            Text(text = hint, style = textStyle, color = Color.DarkGray)
         }
     }
 }
