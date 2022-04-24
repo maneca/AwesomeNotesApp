@@ -5,8 +5,8 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.*
 import com.joao.awesomenotesapp.work.SyncWorker
 import dagger.hilt.android.HiltAndroidApp
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+
 
 @HiltAndroidApp
 class NotesApplication : Application(), Configuration.Provider{
@@ -25,12 +25,12 @@ class NotesApplication : Application(), Configuration.Provider{
             .setRequiredNetworkType(NetworkType.UNMETERED)
             .build()
 
-        val myWork = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES)
+        val refreshWork = OneTimeWorkRequest.Builder(SyncWorker::class.java)
             .setConstraints(constraints)
             .build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "SyncWorker",
-        ExistingPeriodicWorkPolicy.KEEP,
-        myWork)
+        WorkManager.getInstance(this)
+            .enqueueUniqueWork("SyncWorker", ExistingWorkPolicy.KEEP, refreshWork);
+
+
     }
 }
