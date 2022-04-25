@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface NotesRepository {
 
-    fun saveNote(noteId: String, title: String, content: String, imageUri: Uri, timestamp: Long): Flow<Resource<Boolean>>
+    fun saveNote(userId: String, noteId: String, title: String, content: String, imageUri: Uri, timestamp: Long): Flow<Resource<Boolean>>
 
     fun deleteNote(noteId: String): Flow<Boolean>
 

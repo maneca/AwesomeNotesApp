@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.DispatcherProvider
@@ -19,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddEditNotesViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val firebaseAuth: FirebaseAuth,
     private val dispatcher: DispatcherProvider,
     private val repository: NotesRepository
 ) : ViewModel(){
@@ -38,19 +40,21 @@ class AddEditNotesViewModel @Inject constructor(
 
     fun saveNote(id: String, title: String, content: String, imageUri: Uri) {
         viewModelScope.launch {
-            repository
-                .saveNote(id, title, content, imageUri, System.currentTimeMillis())
-                .flowOn(dispatcher.io())
-                .collect { result ->
-                    when(result){
-                        is Resource.Loading ->
-                            _eventFlow.emit(UiEvent.UploadingNote)
-                        is Resource.Success ->
-                            _eventFlow.emit(UiEvent.NoteSaved)
-                        else ->
-                            _eventFlow.emit(UiEvent.Failed)
+            firebaseAuth.currentUser?.let {
+                repository
+                    .saveNote(it.uid, id, title, content, imageUri, System.currentTimeMillis())
+                    .flowOn(dispatcher.io())
+                    .collect { result ->
+                        when(result){
+                            is Resource.Loading ->
+                                _eventFlow.emit(UiEvent.UploadingNote)
+                            is Resource.Success ->
+                                _eventFlow.emit(UiEvent.NoteSaved)
+                            else ->
+                                _eventFlow.emit(UiEvent.Failed)
+                        }
                     }
-                }
+            }
         }
     }
 

@@ -1,7 +1,6 @@
 package com.joao.awesomenotesapp.viewmodel
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.compose.ui.Modifier.Companion.any
 import androidx.core.util.PatternsCompat
 import app.cash.turbine.test
 import com.google.common.truth.Truth
@@ -9,11 +8,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.joao.awesomenotesapp.MainCoroutineRule
 import com.joao.awesomenotesapp.domain.repository.LoginRepository
-import com.joao.awesomenotesapp.domain.repository.LogoutRepository
-import com.joao.awesomenotesapp.util.CustomExceptions
 import com.joao.awesomenotesapp.util.DispatcherProvider
 import com.joao.awesomenotesapp.util.Resource
-import com.joao.awesomenotesapp.util.UiEvent
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.every
@@ -23,10 +19,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -85,12 +78,9 @@ class LoginViewModelTests {
         coEvery { mockFirebaseAuth.currentUser } returns mockFirebaseUser
         every { PatternsCompat.EMAIL_ADDRESS.matcher(any()).matches() } returns true
 
-        viewModel = LoginViewModel(testDispatcherProvider, mockFirebaseAuth, mockRepo)
-        viewModel.state.test {
-            viewModel.loginUser("111","jhsdbfksd")
-            val emission = awaitItem()
-            Truth.assertThat(emission.user).isNotNull()
-        }
+        viewModel = LoginViewModel(testDispatcherProvider, mockRepo)
+        viewModel.loginUser("111","jhsdbfksd")
+        Truth.assertThat(viewModel.state.value.user).isNotNull()
     }
 
     @Test
@@ -102,7 +92,7 @@ class LoginViewModelTests {
         coEvery { mockFirebaseAuth.currentUser } returns null
         every { PatternsCompat.EMAIL_ADDRESS.matcher(any()).matches() } returns true
 
-        viewModel = LoginViewModel(testDispatcherProvider, mockFirebaseAuth, mockRepo)
+        viewModel = LoginViewModel(testDispatcherProvider, mockRepo)
         viewModel.state.test {
             viewModel.loginUser("111","jhsdbfksd")
             val emission = awaitItem()

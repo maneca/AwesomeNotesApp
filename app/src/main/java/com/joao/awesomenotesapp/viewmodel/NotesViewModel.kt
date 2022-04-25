@@ -8,6 +8,7 @@ import com.joao.awesomenotesapp.domain.model.Note
 import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -35,7 +36,7 @@ class NotesViewModel @Inject constructor(
 
     fun getNotes(userId: String) {
 
-        viewModelScope.launch {
+        viewModelScope.launch() {
             repository
                 .getNotes(userId)
                 .flowOn(dispatcher.io())

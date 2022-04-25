@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth
 import com.joao.awesomenotesapp.MainCoroutineRule
 import com.joao.awesomenotesapp.domain.repository.LogoutRepository
+import com.joao.awesomenotesapp.domain.repository.NotesRepository
 import com.joao.awesomenotesapp.util.DispatcherProvider
 import com.joao.awesomenotesapp.util.UiEvent
 import io.mockk.MockKAnnotations
@@ -37,7 +38,10 @@ class LogoutViewModelTests {
     val coroutineRule = MainCoroutineRule()
 
     @MockK
-    private lateinit var mockRepo: LogoutRepository
+    private lateinit var mockLogoutRepo: LogoutRepository
+
+    @MockK
+    private lateinit var mockNotesRepo: NotesRepository
 
     private lateinit var viewModel: LogoutViewModel
 
@@ -65,11 +69,12 @@ class LogoutViewModelTests {
     @Test
     fun `user logout, successful`() = runTest (testDispatcher){
 
-        Truth.assertThat(mockRepo).isNotNull()
+        Truth.assertThat(mockLogoutRepo).isNotNull()
 
-        coEvery { mockRepo.logout(any() ) } returns flowOf(true)
+        coEvery { mockLogoutRepo.logout(any() ) } returns flowOf(true)
+        coEvery { mockNotesRepo.syncNotesToBackend(any()) } returns Unit
 
-        viewModel = LogoutViewModel(testDispatcherProvider, mockRepo)
+        viewModel = LogoutViewModel(testDispatcherProvider, mockNotesRepo, mockLogoutRepo)
         viewModel.eventFlow.test {
             viewModel.logoutUser("111",true)
             val emission = awaitItem()
@@ -80,11 +85,12 @@ class LogoutViewModelTests {
     @Test
     fun `user logout, fail`() = runTest (testDispatcher){
 
-        Truth.assertThat(mockRepo).isNotNull()
+        Truth.assertThat(mockLogoutRepo).isNotNull()
 
-        coEvery { mockRepo.logout(any()) } returns flowOf(false)
+        coEvery { mockLogoutRepo.logout(any()) } returns flowOf(false)
+        coEvery { mockNotesRepo.syncNotesToBackend(any()) } returns Unit
 
-        viewModel = LogoutViewModel(testDispatcherProvider, mockRepo)
+        viewModel = LogoutViewModel(testDispatcherProvider, mockNotesRepo, mockLogoutRepo)
         viewModel.eventFlow.test {
             viewModel.logoutUser("111", true)
             val emission = awaitItem()
@@ -95,11 +101,11 @@ class LogoutViewModelTests {
     @Test
     fun `user logout, no internet`() = runTest (testDispatcher){
 
-        Truth.assertThat(mockRepo).isNotNull()
+        Truth.assertThat(mockLogoutRepo).isNotNull()
 
-        coEvery { mockRepo.logout(any()) } returns flowOf(false)
+        coEvery { mockLogoutRepo.logout(any()) } returns flowOf(false)
 
-        viewModel = LogoutViewModel(testDispatcherProvider, mockRepo)
+        viewModel = LogoutViewModel(testDispatcherProvider, mockNotesRepo, mockLogoutRepo)
         viewModel.eventFlow.test {
             viewModel.logoutUser("111", false)
             val emission = awaitItem()

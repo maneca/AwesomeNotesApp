@@ -7,6 +7,7 @@ import com.joao.awesomenotesapp.domain.model.Note
 @Entity(tableName = "notes")
 data class NoteEntity(
     @PrimaryKey val id : String,
+    val userId: String,
     val title: String,
     val content: String,
     val timestamp: Long

@@ -20,12 +20,14 @@ class NoteDaoTests {
     companion object {
         val noteA = NoteEntity(
             id = "sjdnkdgneri94j",
+            userId = "userA",
             title = "Lista de compras",
             content = "Batatas, Cebolas, Fruta",
             timestamp = 2334535345)
 
         val noteB = NoteEntity(
             id = "jn5tu5jnerooier",
+            userId = "userB",
             title = "Ligar para a sra. Maria",
             content =  "961234567",
             timestamp = 2334455345)
@@ -50,21 +52,20 @@ class NoteDaoTests {
     fun getNotes() = runBlocking{
         dao.insertNotes(listOf(noteA, noteB))
 
-        val notes = dao.getNotes()
-        Assert.assertEquals(2, notes.size)
+        val notes = dao.getNotes("userA")
+        Assert.assertEquals(1, notes.size)
         Assert.assertEquals(noteA.title, notes[0].title)
-        Assert.assertEquals(noteB.title, notes[1].title)
     }
 
     @Test
     fun deleteNews() = runBlocking{
         dao.insertNotes(listOf(noteA, noteB))
 
-        var notes = dao.getNotes()
-        Assert.assertEquals(2, notes.size)
+        var notes = dao.getNotes("userA")
+        Assert.assertEquals(1, notes.size)
 
         dao.deleteNotes()
-        notes = dao.getNotes()
+        notes = dao.getNotes("userA")
 
         Assert.assertEquals(0, notes.size)
     }
@@ -73,7 +74,7 @@ class NoteDaoTests {
     fun insertNote() = runBlocking{
         dao.insertNote(noteA)
 
-        val notes = dao.getNotes()
+        val notes = dao.getNotes("userA")
         Assert.assertEquals(1, notes.size)
 
         Assert.assertEquals(noteA.title, notes[0].title)
@@ -85,12 +86,12 @@ class NoteDaoTests {
     fun deleteNote() = runBlocking{
         dao.insertNotes(listOf(noteA, noteB))
 
-        var notes = dao.getNotes()
-        Assert.assertEquals(2, notes.size)
+        var notes = dao.getNotes("userB")
+        Assert.assertEquals(1, notes.size)
 
         dao.deleteNote(noteB.id)
-        notes = dao.getNotes()
+        notes = dao.getNotes("userB")
 
-        Assert.assertEquals(1, notes.size)
+        Assert.assertEquals(0, notes.size)
     }
 }

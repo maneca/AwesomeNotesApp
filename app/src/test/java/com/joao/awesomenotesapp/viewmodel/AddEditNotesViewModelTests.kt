@@ -5,6 +5,8 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.joao.awesomenotesapp.MainCoroutineRule
 import com.joao.awesomenotesapp.NotesApplication
 import com.joao.awesomenotesapp.domain.model.Note
@@ -49,6 +51,12 @@ class AddEditNotesViewModelTests {
     @MockK
     private lateinit var mockUri: Uri
 
+    @MockK
+    private lateinit var mockFirebaseAuth: FirebaseAuth
+
+    @MockK
+    private lateinit var mockFirebaseUser: FirebaseUser
+
     private lateinit var viewModel: AddEditNotesViewModel
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -76,13 +84,15 @@ class AddEditNotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
         mockkStatic(Uri::class)
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(), any() ) } returns flowOf(Resource.Success(true))
+        coEvery { mockRepo.saveNote(any(), any(), any(), any(), any(), any() ) } returns flowOf(Resource.Success(true))
         every { Uri.fromFile(File("")) } returns mockUri
+        every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+        every { mockFirebaseUser.uid } returns "userA"
 
         val savedStateHandle = SavedStateHandle().apply {
             set("note", Note().toJson())
         }
-        viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
+        viewModel = AddEditNotesViewModel(savedStateHandle, mockFirebaseAuth, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
             viewModel.saveNote("aaa", "111", "title", Uri.fromFile(File("")))
             val emission = awaitItem()
@@ -95,13 +105,15 @@ class AddEditNotesViewModelTests {
 
         Truth.assertThat(mockRepo).isNotNull()
         mockkStatic(Uri::class)
-        coEvery { mockRepo.saveNote(any(), any(), any(), any(),any() ) } returns flowOf(Resource.Error(exception = CustomExceptions.UnknownException))
+        coEvery { mockRepo.saveNote(any(), any(), any(), any(), any(),any() ) } returns flowOf(Resource.Error(exception = CustomExceptions.UnknownException))
         every { Uri.fromFile(File("")) } returns mockUri
+        coEvery { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+        every { mockFirebaseUser.uid } returns "userA"
 
         val savedStateHandle = SavedStateHandle().apply {
             set("note", Note().toJson())
         }
-        viewModel = AddEditNotesViewModel(savedStateHandle, testDispatcherProvider, mockRepo)
+        viewModel = AddEditNotesViewModel(savedStateHandle, mockFirebaseAuth, testDispatcherProvider, mockRepo)
         viewModel.eventFlow.test {
             viewModel.saveNote("aaa", "111", "title", Uri.fromFile(File("")))
             val emission = awaitItem()

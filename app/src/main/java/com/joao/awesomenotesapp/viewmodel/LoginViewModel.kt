@@ -30,7 +30,7 @@ class LoginViewModel @Inject constructor(
             if(validateFields(email, password)){
                 repository.loginUser(email, password)
                     .flowOn(dispatcher.io())
-                    .collect { result ->
+                    .collectLatest { result ->
                         when (result) {
                             is Resource.Success -> {
                                 _state.value = state.value.copy(
