@@ -10,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,14 +17,13 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.joao.awesomenotesapp.R
 import com.joao.awesomenotesapp.ui.components.TransparentHintTextField
@@ -35,7 +33,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun AddEditNotesScreen(
     viewModel: AddEditNotesViewModel,
@@ -46,6 +44,7 @@ fun AddEditNotesScreen(
     val connection by connectivityState()
     val state by viewModel.uiState.collectAsStateLifecycleAware()
     var showLoading by remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     var imageUri by remember {
         mutableStateOf<Uri?>(null)
@@ -113,6 +112,7 @@ fun AddEditNotesScreen(
                         }
                     }
                     IconButton(onClick = {
+                        keyboardController?.hide()
                         viewModel.saveNote(
                             id = state.note.id,
                             title = state.note.title,

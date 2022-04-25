@@ -13,8 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -80,12 +83,15 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.padding(20.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val localFocusManager = LocalFocusManager.current
+                    val focusRequester = FocusRequester()
+
                     OutlinedTextField(
                         value = email.value,
                         onValueChange = {
                             email.value = it
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                         label = {
                             Text(text = stringResource(R.string.enter_email))
                         },
@@ -96,7 +102,7 @@ fun LoginScreen(
                         onValueChange = {
                             password.value = it
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                         label = {
                             Text(text = stringResource(R.string.enter_password))
                         },
@@ -118,6 +124,7 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             keyboardController?.hide()
+                            localFocusManager.clearFocus()
                             viewModel.loginUser(email.value.text, password.value.text)
                             buttonsEnabled.value = false
                         },

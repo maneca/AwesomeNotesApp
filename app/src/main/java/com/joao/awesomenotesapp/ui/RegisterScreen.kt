@@ -13,8 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -82,6 +85,9 @@ fun RegisterScreen(
                 .background(Color.White)
                 .padding(10.dp)
         ) {
+            val localFocusManager = LocalFocusManager.current
+            val focusRequester = FocusRequester()
+
             Text(
                 text = stringResource(id = R.string.register), fontSize = 30.sp,
                 style = TextStyle(
@@ -96,7 +102,7 @@ fun RegisterScreen(
                     onValueChange = { emailValue.value = it },
                     label = { Text(text = stringResource(id = R.string.enter_email)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
                 )
 
                 OutlinedTextField(
@@ -104,7 +110,7 @@ fun RegisterScreen(
                     onValueChange = { passwordValue.value = it },
                     label = { Text(text = stringResource(id = R.string.enter_password)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                     trailingIcon = {
                         IconButton(onClick = {
                             passwordVisibility.value = !passwordVisibility.value
@@ -124,7 +130,7 @@ fun RegisterScreen(
                     onValueChange = { confirmPasswordValue.value = it },
                     label = { Text(text = stringResource(id = R.string.confirm_password)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                     trailingIcon = {
                         IconButton(onClick = {
                             confirmPasswordVisibility.value = !confirmPasswordVisibility.value
@@ -142,6 +148,7 @@ fun RegisterScreen(
                 Button(
                     onClick = {
                         keyboardController?.hide()
+                        localFocusManager.clearFocus()
                         viewModel.registerUser(
                             emailValue.value,
                             passwordValue.value,
